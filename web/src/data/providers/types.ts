@@ -57,8 +57,15 @@ export type ExecutiveDashboardData = {
   resolutionStatus: NamedValue[];
   channelDistribution: NamedValue[];
   answerCoverage: AnswerCoverage;
-  emergingTopics: { rank: number; topic: string; count: number; growthPercent: number }[];
+  emergingTopics: {
+    rank: number;
+    topic: string;
+    count: number;
+    growthPercent: number | null;
+  }[];
   insights: Insight[];
+  /** One-sentence Ch.1 Big Idea from feasible facts only */
+  bigIdea?: string;
 };
 
 export type RequestAnalyticsData = {
@@ -119,12 +126,14 @@ export type TopicSample = {
   className: string;
 };
 
+export type { AnalyticsQueryFilters } from "@/data/filters";
+
 export type TopicCluster = {
   id: string;
   name: string;
   size: number;
   sharePercent: number;
-  growthPercent: number;
+  growthPercent: number | null;
   coherence: number;
   method: string;
   keywords: string[];
@@ -372,12 +381,12 @@ export type AdminCenterData = {
 };
 
 export interface AnalyticsDataProvider {
-  getExecutiveDashboard(): Promise<ExecutiveDashboardData>;
-  getRequestAnalytics(): Promise<RequestAnalyticsData>;
-  getCategoryExplorer(): Promise<CategoryExplorerData>;
-  getTopicExplorer(): Promise<TopicExplorerData>;
-  getAnswerIntelligence(): Promise<AnswerIntelligenceData>;
-  getKpiMonitoring(): Promise<KpiMonitoringData>;
+  getExecutiveDashboard(filters?: AnalyticsQueryFilters): Promise<ExecutiveDashboardData>;
+  getRequestAnalytics(filters?: AnalyticsQueryFilters): Promise<RequestAnalyticsData>;
+  getCategoryExplorer(filters?: AnalyticsQueryFilters): Promise<CategoryExplorerData>;
+  getTopicExplorer(filters?: AnalyticsQueryFilters): Promise<TopicExplorerData>;
+  getAnswerIntelligence(filters?: AnalyticsQueryFilters): Promise<AnswerIntelligenceData>;
+  getKpiMonitoring(filters?: AnalyticsQueryFilters): Promise<KpiMonitoringData>;
   getReportsCenter(): Promise<ReportsCenterData>;
   getAiPerformance(): Promise<AiPerformanceData>;
   getAdminCenter(): Promise<AdminCenterData>;

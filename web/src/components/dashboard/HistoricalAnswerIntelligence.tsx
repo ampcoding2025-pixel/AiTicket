@@ -6,6 +6,7 @@ import { ChartCard } from "@/components/dashboard/ChartCard";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { EChart } from "@/components/charts/EChart";
 import { getAnalyticsProvider } from "@/data/providers";
+import { useDashboardFilters } from "@/data/DashboardFilterContext";
 import type {
   AnswerIntelligenceData,
   AnswerValidityStatus,
@@ -33,6 +34,7 @@ const validityStyle: Record<AnswerValidityStatus, string> = {
 };
 
 export function HistoricalAnswerIntelligence() {
+  const { filters } = useDashboardFilters();
   const [data, setData] = useState<AnswerIntelligenceData | null>(null);
   const [selectedId, setSelectedId] = useState<string>("case-1");
   const [filter, setFilter] = useState<"all" | AnswerValidityStatus>("all");
@@ -40,7 +42,7 @@ export function HistoricalAnswerIntelligence() {
   useEffect(() => {
     let alive = true;
     getAnalyticsProvider()
-      .getAnswerIntelligence()
+      .getAnswerIntelligence(filters)
       .then((res) => {
         if (alive) {
           setData(res);
@@ -50,7 +52,7 @@ export function HistoricalAnswerIntelligence() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [filters.period, filters.subjectClassId]);
 
   const filteredCases = useMemo(() => {
     if (!data) return [];

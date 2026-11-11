@@ -5,6 +5,7 @@ import type { EChartsOption } from "echarts";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { EChart } from "@/components/charts/EChart";
 import { getAnalyticsProvider } from "@/data/providers";
+import { useDashboardFilters } from "@/data/DashboardFilterContext";
 import type {
   DictionaryFeasibility,
   KpiDictionaryItem,
@@ -51,6 +52,7 @@ function formatKpiValue(item: KpiDictionaryItem) {
 }
 
 export function KpiMonitoring() {
+  const { filters } = useDashboardFilters();
   const [data, setData] = useState<KpiMonitoringData | null>(null);
   const [group, setGroup] = useState<"all" | KpiGroup>("all");
   const [feasibility, setFeasibility] = useState<"all" | DictionaryFeasibility>("all");
@@ -60,7 +62,7 @@ export function KpiMonitoring() {
   useEffect(() => {
     let alive = true;
     getAnalyticsProvider()
-      .getKpiMonitoring()
+      .getKpiMonitoring(filters)
       .then((res) => {
         if (alive) {
           setData(res);
@@ -70,7 +72,7 @@ export function KpiMonitoring() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [filters.period, filters.subjectClassId]);
 
   const filtered = useMemo(() => {
     if (!data) return [];

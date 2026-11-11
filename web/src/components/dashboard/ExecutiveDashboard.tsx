@@ -6,29 +6,33 @@ import { ChartCard } from "@/components/dashboard/ChartCard";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { EChart } from "@/components/charts/EChart";
 import { getAnalyticsProvider } from "@/data/providers";
+import { useDashboardFilters } from "@/data/DashboardFilterContext";
 import type { ExecutiveDashboardData } from "@/data/providers/types";
 import { formatFaNumber, formatFaPercent } from "@/lib/utils";
 import { AlertTriangle, Lightbulb, Info } from "lucide-react";
+import Link from "next/link";
 
 const brand = "#0f766e";
 const slate = "#64748b";
 const amber = "#d97706";
 
 export function ExecutiveDashboard() {
+  const { filters } = useDashboardFilters();
   const [data, setData] = useState<ExecutiveDashboardData | null>(null);
   const [selectedKpi, setSelectedKpi] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
+    setData(null);
     getAnalyticsProvider()
-      .getExecutiveDashboard()
+      .getExecutiveDashboard(filters)
       .then((res) => {
         if (alive) setData(res);
       });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [filters.period, filters.subjectClassId]);
 
   const volumeOption = useMemo<EChartsOption>(() => {
     if (!data) return {};
@@ -196,47 +200,63 @@ export function ExecutiveDashboard() {
   if (!data) {
     return (
       <div className="flex h-64 items-center justify-center text-sm text-[var(--muted)]">
-        در حال بارگذاری داده‌های نمایشی...
+        در حال بارگذاری داشبورد برای بازه انتخابی...
       </div>
     );
   }
 
   const selected = data.kpis.find((k) => k.id === selectedKpi);
+  const primaryKpis = data.kpis.filter((k) => k.feasibility === "feasible");
+  const secondaryKpis = data.kpis.filter((k) => k.feasibility !== "feasible");
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border border-teal-200 bg-gradient-to-l from-teal-50 via-white to-slate-50 px-4 py-3">
+      <div className="rounded-xl border border-teal-200 bg-teal-50/60 px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
           <div>
-            <span className="font-semibold text-teal-900">منبع داده:</span>{" "}
-            <span className="text-slate-700">{data.meta.label}</span>
+            <span className="font-semibold text-teal-900">مخاطب:</span>{" "}
+            <span className="text-slate-700">مدیران ارشد / راهبران تحلیل (موقت تا تأیید نقش)</span>
           </div>
-          <div className="text-slate-600">بازه: {data.meta.periodLabel}</div>
+          <div className="text-slate-600">بازه واقعی داده: {data.meta.periodLabel}</div>
         </div>
-        <p className="mt-2 text-xs leading-5 text-slate-500">{data.meta.domainNote}</p>
+        <div className="mt-2 text-sm font-semibold leading-7 text-slate-900">
+          {data.bigIdea ?? "جمع‌بندی بازه هنوز ساخته نشده است."}
+        </div>
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          {data.meta.label} · {data.meta.domainNote}
+        </p>
       </div>
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {data.kpis.map((kpi) => (
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {primaryKpis.map((kpi) => (
           <KpiCard key={kpi.id} kpi={kpi} onOpen={setSelectedKpi} />
         ))}
       </section>
+
+      {secondaryKpis.length ? (
+        <section>
+          <div className="mb-2 text-xs font-semibold text-[var(--muted)]">
+            شاخص‌های نیازمند قاعده یا ناموجود (اولویت دوم)
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {secondaryKpis.map((kpi) => (
+              <KpiCard key={kpi.id} kpi={kpi} onOpen={setSelectedKpi} />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="xl:col-span-2">
           <ChartCard
             title="روند حجم پرونده و شکایت"
-            subtitle={
-              data.volumeTrend.length
-                ? "مقایسه ماهانه"
-                : "سری زمانی هنوز از API برنمی‌گردد — KPIها زنده هستند"
-            }
+            subtitle={data.volumeTrend.length ? "ماهانه · CookieTime" : "سری زمانی در دسترس نیست"}
           >
             {data.volumeTrend.length ? (
               <EChart option={volumeOption} height={300} />
             ) : (
               <div className="flex h-[300px] items-center justify-center text-sm text-[var(--muted)]">
-                نمودار روند در نسخه فعلی API پیاده نشده است.
+                نمودار روند برای این بازه خالی است.
               </div>
             )}
           </ChartCard>
@@ -246,114 +266,100 @@ export function ExecutiveDashboard() {
         </ChartCard>
       </section>
 
+      <section>
+        <ChartCard
+          title="اقدام پیشنهادی بر اساس شواهد"
+          subtitle="فقط جایی که داده پشتیبانی می‌کند — بدون ادعای NLP یا SLA"
+        >
+          <div className="grid gap-3 md:grid-cols-3">
+            {data.insights.map((insight) => {
+              const Icon =
+                insight.severity === "attention"
+                  ? AlertTriangle
+                  : insight.severity === "opportunity"
+                    ? Lightbulb
+                    : Info;
+              const tone =
+                insight.severity === "attention"
+                  ? "border-amber-200 bg-amber-50 text-amber-950"
+                  : insight.severity === "opportunity"
+                    ? "border-teal-200 bg-teal-50 text-teal-950"
+                    : "border-sky-200 bg-sky-50 text-sky-950";
+              return (
+                <article key={insight.id} className={`rounded-xl border p-3 ${tone}`}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Icon className="h-4 w-4" />
+                    <h4 className="text-sm font-bold">{insight.title}</h4>
+                  </div>
+                  <p className="text-xs leading-6 opacity-90">{insight.body}</p>
+                </article>
+              );
+            })}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            <Link className="rounded-md bg-white px-2.5 py-1.5 text-teal-800 ring-1 ring-teal-200" href="/knowledge/answers">
+              پوشش پاسخ تاریخی
+            </Link>
+            <Link className="rounded-md bg-white px-2.5 py-1.5 text-teal-800 ring-1 ring-teal-200" href="/analytics/categories">
+              کاوش دسته‌بندی
+            </Link>
+            <Link className="rounded-md bg-white px-2.5 py-1.5 text-teal-800 ring-1 ring-teal-200" href="/performance/kpi">
+              پایش شاخص‌ها
+            </Link>
+          </div>
+        </ChartCard>
+      </section>
+
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <ChartCard title="گروه‌های موضوعی پرتکرار" subtitle="SubjectGroup — نه درمان/بیمه فرضی">
-          <EChart option={categoryOption} height={300} />
+        <ChartCard title="موضوعات پرتکرار" subtitle="رتبه‌بندی Subject — رشد نسبی محاسبه نشده">
+          <ul className="divide-y divide-slate-100">
+            {data.emergingTopics.map((t) => (
+              <li key={t.rank} className="flex items-center justify-between gap-3 py-3">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-50 text-xs font-bold text-teal-800">
+                    {formatFaNumber(t.rank)}
+                  </span>
+                  <div>
+                    <div className="text-sm font-medium text-slate-900">{t.topic}</div>
+                    <div className="mt-1 text-xs text-[var(--muted)]">
+                      {formatFaNumber(t.count)} مورد
+                    </div>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         </ChartCard>
-        <ChartCard title="عملکرد ادارات / واحدها" subtitle="حجم پرونده دوره (نمایشی)">
-          <EChart option={orgOption} height={300} />
+        <ChartCard title="گروه‌های موضوعی پرتکرار" subtitle="از Subjectهای پرتکرار">
+          <EChart option={categoryOption} height={280} />
         </ChartCard>
-        <ChartCard title="وضعیت رسیدگی" subtitle="CookieStatus — نیازمند قاعده بسته‌شدن">
-          {data.resolutionStatus.length ? (
-            <EChart option={statusOption} height={300} />
-          ) : (
-            <div className="flex h-[300px] items-center justify-center text-sm text-[var(--muted)]">
-              توزیع وضعیت در این منبع هنوز متصل نشده است.
-            </div>
-          )}
+        <ChartCard title="پوشش پاسخ تاریخی" subtitle="Availability · Validity ناموجود">
+          <EChart option={coverageOption} height={200} />
+          <p className="mt-2 text-[11px] leading-5 text-amber-950">
+            {formatFaPercent(data.answerCoverage.historicalAvailablePercent)} پاسخ شهروند ·{" "}
+            {data.answerCoverage.caveat}
+          </p>
         </ChartCard>
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <ChartCard title="کانال ثبت" subtitle="CookieChannel">
-          <EChart option={channelOption} height={280} />
+          <EChart option={channelOption} height={260} />
         </ChartCard>
-        <div className="xl:col-span-2">
-          <ChartCard
-            title="پوشش پاسخ تاریخی"
-            subtitle="Availability واقعی‌نما · Validity در دیده‌بان موجود نیست"
-          >
-            <div className="grid gap-4 md:grid-cols-2">
-              <EChart option={coverageOption} height={220} />
-              <div className="grid grid-cols-1 gap-2 self-center text-center text-xs sm:grid-cols-3 md:grid-cols-1 lg:grid-cols-3">
-                <div className="rounded-lg bg-amber-50 p-3">
-                  <div className="text-[var(--muted)]">پاسخ شهروند موجود</div>
-                  <div className="mt-1 text-lg font-bold text-amber-900">
-                    {formatFaPercent(data.answerCoverage.historicalAvailablePercent)}
-                  </div>
-                </div>
-                <div className="rounded-lg bg-slate-100 p-3">
-                  <div className="text-[var(--muted)]">معتبر فعلی</div>
-                  <div className="mt-1 text-lg font-bold text-slate-500">ناموجود</div>
-                </div>
-                <div className="rounded-lg bg-slate-100 p-3">
-                  <div className="text-[var(--muted)]">نیازمند بررسی خبره</div>
-                  <div className="mt-1 text-lg font-bold text-slate-500">ناموجود</div>
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2 text-[11px] leading-5 text-amber-950">
-              {data.answerCoverage.caveat}
-            </p>
+        <ChartCard title="حجم ادارات / واحدها" subtitle="بر اساس Department — نه امتیاز عملکرد">
+          <EChart option={orgOption} height={260} />
+        </ChartCard>
+        {data.resolutionStatus.length ? (
+          <ChartCard title="اتمام / باز (FinishTime)" subtitle="نیازمند قاعده بسته‌شدن کسب‌وکار">
+            <EChart option={statusOption} height={260} />
           </ChartCard>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-5">
-        <div className="xl:col-span-2">
-          <ChartCard title="موضوعات پرتکرار / نوظهور" subtitle="برگرفته از Subjectهای دیده‌بان (نمایشی)">
-            <ul className="divide-y divide-slate-100">
-              {data.emergingTopics.map((t) => (
-                <li key={t.rank} className="flex items-center justify-between gap-3 py-3">
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-50 text-xs font-bold text-teal-800">
-                      {formatFaNumber(t.rank)}
-                    </span>
-                    <div>
-                      <div className="text-sm font-medium text-slate-900">{t.topic}</div>
-                      <div className="mt-1 text-xs text-[var(--muted)]">
-                        {formatFaNumber(t.count)} مورد
-                      </div>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-rose-50 px-2 py-1 text-[11px] font-medium text-rose-700">
-                    +{formatFaPercent(t.growthPercent)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </ChartCard>
-        </div>
-
-        <div className="xl:col-span-3">
-          <ChartCard title="بینش‌های تحلیلی اخیر" subtitle="تفسیر نمایشی مبتنی بر یافته‌های بازرسی داده">
-            <div className="grid gap-3 md:grid-cols-3">
-              {data.insights.map((insight) => {
-                const Icon =
-                  insight.severity === "attention"
-                    ? AlertTriangle
-                    : insight.severity === "opportunity"
-                      ? Lightbulb
-                      : Info;
-                const tone =
-                  insight.severity === "attention"
-                    ? "border-amber-200 bg-amber-50 text-amber-950"
-                    : insight.severity === "opportunity"
-                      ? "border-teal-200 bg-teal-50 text-teal-950"
-                      : "border-sky-200 bg-sky-50 text-sky-950";
-                return (
-                  <article key={insight.id} className={`rounded-xl border p-3 ${tone}`}>
-                    <div className="mb-2 flex items-center gap-2">
-                      <Icon className="h-4 w-4" />
-                      <h4 className="text-sm font-bold">{insight.title}</h4>
-                    </div>
-                    <p className="text-xs leading-6 opacity-90">{insight.body}</p>
-                  </article>
-                );
-              })}
+        ) : (
+          <ChartCard title="وضعیت رسیدگی" subtitle="در این منبع متصل نیست">
+            <div className="flex h-[260px] items-center justify-center text-sm text-[var(--muted)]">
+              نمودار وضعیت مخفی شد چون داده ندارد.
             </div>
           </ChartCard>
-        </div>
+        )}
       </section>
 
       {selected ? (
@@ -363,7 +369,7 @@ export function ExecutiveDashboard() {
               <div>
                 <h3 className="text-lg font-bold text-slate-900">{selected.label}</h3>
                 <p className="mt-1 text-sm text-[var(--muted)]">
-                  دریل‌داون نمایشی — پس از قرارداد API به رکوردهای فیلترشده وصل می‌شود.
+                  جزئیات شاخص در بازه «{data.meta.periodLabel}»
                 </p>
               </div>
               <button
@@ -389,8 +395,8 @@ export function ExecutiveDashboard() {
               ) : null}
             </div>
             <p className="mt-4 text-xs leading-6 text-slate-500">
-              اتصال فقط‌خواندنی به دیده‌بان با حداقل‌سازی داده شخصی انجام خواهد شد. شاخص‌های
-              Unavailable تا تأمین فیلد/قاعده نمایش داده نمی‌شوند یا خنثی می‌مانند.
+              امکان‌سنجی: {selected.feasibility}. برای اقدام عملی از لینک‌های «پوشش پاسخ» یا «پایش
+              شاخص‌ها» استفاده کنید.
             </p>
           </div>
         </div>

@@ -1,3 +1,5 @@
+import type { AnalyticsQueryFilters } from "@/data/filters";
+import { DEFAULT_FILTERS, filtersToQuery } from "@/data/filters";
 import type {
   AnalyticsDataProvider,
   AnswerIntelligenceData,
@@ -19,6 +21,48 @@ import type {
 import { mockAnalyticsProvider } from "@/data/providers/mockProvider";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5088";
+
+function apiPath(path: string, filters?: AnalyticsQueryFilters): string {
+  return `${path}${filtersToQuery(filters ?? DEFAULT_FILTERS)}`;
+}
+
+function faNum(n: number, digits = 0): string {
+  return new Intl.NumberFormat("fa-IR", {
+    maximumFractionDigits: digits,
+    minimumFractionDigits: digits,
+  }).format(n);
+}
+
+function buildBigIdea(kpis: ExecutiveKpi[], periodLabel: string): string {
+  const total = kpis.find((k) => k.id === "total-requests");
+  const complaints = kpis.find((k) => k.id === "total-complaints");
+  const coverage = kpis.find((k) => k.id === "answer-coverage");
+  const sla = kpis.find((k) => k.id === "sla");
+
+  const parts: string[] = [];
+  if (total?.value != null) {
+    parts.push(`در ${periodLabel} حدود ${faNum(total.value)} پرونده`);
+  }
+  if (complaints?.value != null && total?.value) {
+    const share = Math.round((1000 * complaints.value) / total.value) / 10;
+    parts.push(`سهم شکایت ≈ ${faNum(share, 1)}٪`);
+  }
+  if (coverage?.value != null) {
+    parts.push(`پوشش پاسخ شهروند ≈ ${faNum(coverage.value, 1)}٪`);
+  }
+  if (sla?.feasibility === "unavailable") {
+    parts.push("SLA قابل محاسبه نیست");
+  }
+  return parts.length
+    ? `${parts.join("؛ ")}.`
+    : `بازه ${periodLabel} — شاخص قابل اتکا برای جمع‌بندی موجود نیست.`;
+}
+
+function sortKpisForExecutive(kpis: ExecutiveKpi[]): ExecutiveKpi[] {
+  const rank = (f?: KpiFeasibility) =>
+    f === "feasible" ? 0 : f === "needs_rules" ? 1 : f === "illustrative" ? 2 : 3;
+  return [...kpis].sort((a, b) => rank(a.feasibility) - rank(b.feasibility));
+}
 
 type ApiKpi = {
   id: string;
@@ -174,9 +218,11 @@ function mapCategoryNode(node: ApiCategoryNode): CategoryNode {
 }
 
 export const apiAnalyticsProvider: AnalyticsDataProvider = {
-  async getExecutiveDashboard(): Promise<ExecutiveDashboardData> {
-    const data = await fetchJson<ApiExecutive>("/api/v1/analytics/executive");
+  async getExecutiveDashboard(filters?: AnalyticsQueryFilters): Promise<ExecutiveDashboardData> {
+    const data = await fetchJson<ApiExecutive>(apiPath("/api/v1/analytics/executive", filters));
     const subjects = mapNamed(data.topSubjects);
+    const kpis = sortKpisForExecutive(data.kpis.map(mapKpi));
+    const coverage = kpis.find((k) => k.id === "answer-coverage");
 
     return {
       meta: {
@@ -186,7 +232,8 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
         generatedAt: data.meta.generatedAt,
         domainNote: "موجودیت Cookie · SubjectClass/Subject/Department — فقط‌خواندنی",
       },
-      kpis: data.kpis.map(mapKpi),
+      bigIdea: buildBigIdea(kpis, data.meta.periodLabel),
+      kpis,
       volumeTrend: (data.volumeTrend ?? []).map((p) => ({
         label: p.label,
         requests: Number(p.requests),
@@ -216,27 +263,36 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
         rank: idx + 1,
         topic: s.name,
         count: s.value,
-        growthPercent: 0,
+        growthPercent: null,
       })),
       insights: [
         {
-          id: "live-1",
-          title: "اتصال زنده به دیده‌بان فعال است",
-          body: `شاخص‌های حجم و پوشش پاسخ از پایگاه خوانده شدند (${data.meta.periodLabel}).`,
-          severity: "info",
+          id: "cov",
+          title: "پوشش پاسخ شهروند پایین است",
+          body:
+            coverage?.value != null
+              ? `حدود ${faNum(coverage.value, 1)}٪ پرونده‌ها پاسخ شهروند دارند. برای نمونه‌های redact‌شده به «پوشش پاسخ تاریخی» بروید — این عدد اعتبار قانونی نیست.`
+              : "پوشش پاسخ در این بازه در دسترس نیست.",
+          severity: "attention",
         },
         {
-          id: "live-2",
-          title: "اعتبار پاسخ تاریخی ناموجود",
-          body: "پوشش پاسخ فقط Availability است؛ Validity تا لایه دانش نسخه‌بندی خاموش می‌ماند.",
-          severity: "attention",
+          id: "vol",
+          title: "تمرکز موضوعی را در کاوش دسته‌بندی ببینید",
+          body: "توزیع Subject/Department در همین صفحه خلاصه است؛ تصمیم تخصیص ظرفیت نیاز به درخت دسته‌بندی و فیلتر بازه دارد.",
+          severity: "opportunity",
+        },
+        {
+          id: "rules",
+          title: "شاخص‌های رسیدگی هنوز نیازمند قاعده کسب‌وکارند",
+          body: "نرخ اتمام و میانگین روز بر FinishTime است؛ تعریف بسته‌شدن تا امضای stakeholder قطعی نیست.",
+          severity: "info",
         },
       ],
     };
   },
 
-  async getRequestAnalytics(): Promise<RequestAnalyticsData> {
-    const data = await fetchJson<ApiRequests>("/api/v1/analytics/requests");
+  async getRequestAnalytics(filters?: AnalyticsQueryFilters): Promise<RequestAnalyticsData> {
+    const data = await fetchJson<ApiRequests>(apiPath("/api/v1/analytics/requests", filters));
     return {
       meta: {
         source: "didban",
@@ -265,8 +321,10 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
     };
   },
 
-  async getCategoryExplorer(): Promise<CategoryExplorerData> {
-    const data = await fetchJson<ApiCategory>("/api/v1/analytics/categories/tree");
+  async getCategoryExplorer(filters?: AnalyticsQueryFilters): Promise<CategoryExplorerData> {
+    const data = await fetchJson<ApiCategory>(
+      apiPath("/api/v1/analytics/categories/tree", filters),
+    );
     return {
       meta: {
         source: "didban",
@@ -279,8 +337,10 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
     };
   },
 
-  async getAnswerIntelligence(): Promise<AnswerIntelligenceData> {
-    const data = await fetchJson<ApiAnswers>("/api/v1/knowledge/answers/summary");
+  async getAnswerIntelligence(filters?: AnalyticsQueryFilters): Promise<AnswerIntelligenceData> {
+    const data = await fetchJson<ApiAnswers>(
+      apiPath("/api/v1/knowledge/answers/summary", filters),
+    );
     return {
       meta: {
         source: "didban",
@@ -325,7 +385,7 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
     };
   },
 
-  async getTopicExplorer(): Promise<TopicExplorerData> {
+  async getTopicExplorer(filters?: AnalyticsQueryFilters): Promise<TopicExplorerData> {
     const data = await fetchJson<{
       meta: ApiMeta;
       ruleSetVersion: string;
@@ -346,7 +406,7 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
         samples: { id: string; caption: string; className: string }[];
       }[];
       relations: { source: string; target: string; weight: number; reason: string }[];
-    }>("/api/v1/analytics/topics");
+    }>(apiPath("/api/v1/analytics/topics", filters));
 
     return {
       meta: {
@@ -362,7 +422,7 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
         name: c.name,
         size: Number(c.size),
         sharePercent: Number(c.sharePercent),
-        growthPercent: Number(c.growthPercent ?? 0),
+        growthPercent: c.growthPercent == null ? null : Number(c.growthPercent),
         coherence: Number(c.coherence ?? 0),
         method: c.method,
         keywords: c.keywords ?? [],
@@ -386,8 +446,8 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
     };
   },
 
-  async getKpiMonitoring(): Promise<KpiMonitoringData> {
-    const catalog = await mockAnalyticsProvider.getKpiMonitoring();
+  async getKpiMonitoring(filters?: AnalyticsQueryFilters): Promise<KpiMonitoringData> {
+    const catalog = await mockAnalyticsProvider.getKpiMonitoring(filters);
     const live = await fetchJson<{
       meta: ApiMeta;
       ruleSetVersion: string;
@@ -398,7 +458,7 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
         unit: string;
         computedAt: string;
       }[];
-    }>("/api/v1/kpis/values");
+    }>(apiPath("/api/v1/kpis/values", filters));
 
     const byCode = new Map(
       live.values.map((v) => [v.code.trim().toUpperCase(), v] as const),

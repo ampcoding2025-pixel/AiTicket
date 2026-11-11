@@ -2,23 +2,25 @@
 
 import { usePathname } from "next/navigation";
 import { CalendarRange, Building2, Filter, Download } from "lucide-react";
+import { useDashboardFilters } from "@/data/DashboardFilterContext";
+import { SUBJECT_CLASS_OPTIONS, type PeriodKey } from "@/data/filters";
 
 const titles: Record<string, { title: string; subtitle: string }> = {
   "/": {
     title: "داشبورد مدیریتی",
-    subtitle: "نمای سازمانی پرونده‌ها، شکایات، عملکرد و پوشش دانش تاریخی",
+    subtitle: "نمای مدیریتی حجم پرونده و پوشش دانش — برای تصمیم‌گیری سطح سازمان",
   },
   "/analytics/requests": {
     title: "تحلیل درخواست‌ها و شکایات",
-    subtitle: "حجم، SubjectClass، کانال، استان و نامزدهای تکرار (نمایشی)",
+    subtitle: "حجم، SubjectClass، کانال، استان و نامزدهای تکرار",
   },
   "/analytics/categories": {
     title: "کاوش دسته‌بندی",
-    subtitle: "درخت Zone → Nature → Group → Subject بر اساس ابعاد دیده‌بان (نمایشی)",
+    subtitle: "درخت Zone → Nature → Group → Subject بر اساس ابعاد دیده‌بان",
   },
   "/analytics/topics": {
     title: "کاوش موضوع و خوشه",
-    subtitle: "خوشه‌های NLP نمایشی، کلیدواژه، تحول زمانی و گراف روابط معنادار",
+    subtitle: "پایه تاکسونومی Subject (نه NLP) + تحول زمانی",
   },
   "/knowledge/answers": {
     title: "هوش پاسخ تاریخی",
@@ -64,10 +66,14 @@ const titles: Record<string, { title: string; subtitle: string }> = {
 
 export function Header() {
   const pathname = usePathname();
+  const { filters, setPeriod, setSubjectClassId } = useDashboardFilters();
   const meta = titles[pathname] ?? {
     title: "پلتفرم هوش تحلیلی",
     subtitle: "نسخه اولیه Outside-In",
   };
+
+  const classValue =
+    SUBJECT_CLASS_OPTIONS.find((o) => o.id === filters.subjectClassId)?.value ?? "all";
 
   return (
     <header className="border-b border-[var(--border)] bg-white/90 px-5 py-4 backdrop-blur">
@@ -80,39 +86,53 @@ export function Header() {
         <div className="flex flex-wrap items-center gap-2">
           <label className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm text-slate-700">
             <CalendarRange className="h-4 w-4 text-[var(--brand)]" />
-            <select className="bg-transparent outline-none" defaultValue="30d" aria-label="بازه زمانی">
+            <select
+              className="bg-transparent outline-none"
+              value={filters.period}
+              aria-label="بازه زمانی"
+              onChange={(e) => setPeriod(e.target.value as PeriodKey)}
+            >
+              <option value="all">کل دوره تاریخی</option>
               <option value="30d">۳۰ روز اخیر</option>
               <option value="90d">۹۰ روز اخیر</option>
               <option value="ytd">از ابتدای سال</option>
-              <option value="all">کل دوره تاریخی</option>
             </select>
           </label>
 
-          <label className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm text-slate-700">
-            <Building2 className="h-4 w-4 text-[var(--brand)]" />
-            <select className="bg-transparent outline-none" defaultValue="all" aria-label="واحد سازمانی">
-              <option value="all">همه واحدها</option>
-              <option value="tehran">بهزیستی تهران</option>
-              <option value="isfahan">بهزیستی اصفهان</option>
-              <option value="khorasan">بهزیستی خراسان رضوی</option>
-              <option value="fars">بهزیستی فارس</option>
+          <label
+            className="inline-flex cursor-not-allowed items-center gap-2 rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-400"
+            title="فیلتر واحد سازمانی پس از فهرست شناسه Department از API فعال می‌شود"
+          >
+            <Building2 className="h-4 w-4" />
+            <select className="bg-transparent outline-none" disabled defaultValue="all" aria-label="واحد سازمانی">
+              <option value="all">همه واحدها (غیرفعال)</option>
             </select>
           </label>
 
           <label className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm text-slate-700">
             <Filter className="h-4 w-4 text-[var(--brand)]" />
-            <select className="bg-transparent outline-none" defaultValue="all" aria-label="طبقه درخواست">
-              <option value="all">همه طبقات</option>
-              <option value="complaint">شکایت</option>
-              <option value="guidance">راهنمایی و ارشاد</option>
-              <option value="report">گزارش</option>
-              <option value="suggestion">پیشنهاد</option>
+            <select
+              className="bg-transparent outline-none"
+              value={classValue}
+              aria-label="طبقه درخواست"
+              onChange={(e) => {
+                const opt = SUBJECT_CLASS_OPTIONS.find((o) => o.value === e.target.value);
+                setSubjectClassId(opt?.id ?? null);
+              }}
+            >
+              {SUBJECT_CLASS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
             </select>
           </label>
 
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-md bg-[var(--brand)] px-3 py-2 text-sm font-medium text-white transition hover:bg-[var(--brand-strong)]"
+            disabled
+            title="خروجی پس از پایدار شدن فیلتر بازه فعال می‌شود"
+            className="inline-flex cursor-not-allowed items-center gap-2 rounded-md bg-slate-300 px-3 py-2 text-sm font-medium text-slate-600"
           >
             <Download className="h-4 w-4" />
             خروجی گزارش

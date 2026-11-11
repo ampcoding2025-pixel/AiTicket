@@ -6,6 +6,7 @@ import { ChartCard } from "@/components/dashboard/ChartCard";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { EChart } from "@/components/charts/EChart";
 import { getAnalyticsProvider } from "@/data/providers";
+import { useDashboardFilters } from "@/data/DashboardFilterContext";
 import type { TopicExplorerData } from "@/data/providers/types";
 import { cn, formatFaNumber, formatFaPercent } from "@/lib/utils";
 import { Network, Sparkles } from "lucide-react";
@@ -15,13 +16,14 @@ const slate = "#64748b";
 const amber = "#d97706";
 
 export function TopicClusterExplorer() {
+  const { filters } = useDashboardFilters();
   const [data, setData] = useState<TopicExplorerData | null>(null);
   const [selectedId, setSelectedId] = useState("t1");
 
   useEffect(() => {
     let alive = true;
     getAnalyticsProvider()
-      .getTopicExplorer()
+      .getTopicExplorer(filters)
       .then((res) => {
         if (alive) {
           setData(res);
@@ -31,7 +33,7 @@ export function TopicClusterExplorer() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [filters.period, filters.subjectClassId]);
 
   const selected = useMemo(
     () => data?.clusters.find((c) => c.id === selectedId) ?? data?.clusters[0] ?? null,
@@ -215,10 +217,14 @@ export function TopicClusterExplorer() {
                   <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-[var(--muted)]">
                     <span>{formatFaNumber(c.size)} مورد</span>
                     <span>{formatFaPercent(c.sharePercent)}</span>
-                    <span className={c.growthPercent >= 0 ? "text-rose-600" : "text-emerald-700"}>
-                      {c.growthPercent >= 0 ? "+" : ""}
-                      {formatFaPercent(c.growthPercent)}
-                    </span>
+                    {c.growthPercent != null ? (
+                      <span className={c.growthPercent >= 0 ? "text-rose-600" : "text-emerald-700"}>
+                        {c.growthPercent >= 0 ? "+" : ""}
+                        {formatFaPercent(c.growthPercent)}
+                      </span>
+                    ) : (
+                      <span>رشد نامشخص</span>
+                    )}
                   </div>
                 </button>
               </li>
@@ -238,14 +244,18 @@ export function TopicClusterExplorer() {
                 <div className="mt-1 text-xl font-bold">{formatFaPercent(selected.sharePercent)}</div>
               </div>
               <div className="rounded-lg bg-slate-50 p-3">
-                <div className="text-[11px] text-[var(--muted)]">رشد</div>
-                <div className="mt-1 text-xl font-bold text-rose-700">
-                  +{formatFaPercent(selected.growthPercent)}
+                <div className="text-[11px] text-[var(--muted)]">رشد سالانه</div>
+                <div className="mt-1 text-xl font-bold text-slate-800">
+                  {selected.growthPercent == null
+                    ? "—"
+                    : `${selected.growthPercent >= 0 ? "+" : ""}${formatFaPercent(selected.growthPercent)}`}
                 </div>
               </div>
               <div className="rounded-lg bg-slate-50 p-3">
-                <div className="text-[11px] text-[var(--muted)]">انسجام (نمایشی)</div>
-                <div className="mt-1 text-xl font-bold">{formatFaNumber(selected.coherence, 2)}</div>
+                <div className="text-[11px] text-[var(--muted)]">انسجام NLP</div>
+                <div className="mt-1 text-xl font-bold">
+                  {selected.coherence ? formatFaNumber(selected.coherence, 2) : "—"}
+                </div>
               </div>
             </div>
 

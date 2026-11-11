@@ -6,6 +6,7 @@ import { ChartCard } from "@/components/dashboard/ChartCard";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { EChart } from "@/components/charts/EChart";
 import { getAnalyticsProvider } from "@/data/providers";
+import { useDashboardFilters } from "@/data/DashboardFilterContext";
 import type { RequestAnalyticsData } from "@/data/providers/types";
 import { formatFaNumber } from "@/lib/utils";
 
@@ -13,19 +14,20 @@ const brand = "#0f766e";
 const slate = "#64748b";
 
 export function RequestAnalytics() {
+  const { filters } = useDashboardFilters();
   const [data, setData] = useState<RequestAnalyticsData | null>(null);
 
   useEffect(() => {
     let alive = true;
     getAnalyticsProvider()
-      .getRequestAnalytics()
+      .getRequestAnalytics(filters)
       .then((res) => {
         if (alive) setData(res);
       });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [filters.period, filters.subjectClassId]);
 
   const classOption = useMemo<EChartsOption>(() => {
     if (!data) return {};

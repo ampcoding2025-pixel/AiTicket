@@ -6,6 +6,7 @@ import { ChartCard } from "@/components/dashboard/ChartCard";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { EChart } from "@/components/charts/EChart";
 import { getAnalyticsProvider } from "@/data/providers";
+import { useDashboardFilters } from "@/data/DashboardFilterContext";
 import type { CategoryExplorerData, CategoryNode, TaxonomyLevel } from "@/data/providers/types";
 import { cn, formatFaNumber, formatFaPercent } from "@/lib/utils";
 import { ChevronLeft, ChevronDown, FolderTree } from "lucide-react";
@@ -111,17 +112,19 @@ export function CategoryExplorer() {
     () => new Set(["zone-rehab", "nat-rehab-care", "grp-nursing"]),
   );
 
+  const { filters } = useDashboardFilters();
+
   useEffect(() => {
     let alive = true;
     getAnalyticsProvider()
-      .getCategoryExplorer()
+      .getCategoryExplorer(filters)
       .then((res) => {
         if (alive) setData(res);
       });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [filters.period, filters.subjectClassId]);
 
   const selected = useMemo(() => {
     if (!data) return null;
