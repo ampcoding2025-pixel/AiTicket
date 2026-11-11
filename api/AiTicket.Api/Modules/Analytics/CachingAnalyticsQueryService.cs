@@ -24,6 +24,9 @@ public sealed class CachingAnalyticsQueryService(
     public Task<CategoryExplorerResponse> GetCategoryTreeAsync(PeriodFilter filter, CancellationToken ct) =>
         GetOrCreateAsync($"cat:{Key(filter)}", () => inner.GetCategoryTreeAsync(filter, ct));
 
+    public Task<TopicExplorerResponse> GetTopicsAsync(PeriodFilter filter, CancellationToken ct) =>
+        GetOrCreateAsync($"topics:{Key(filter)}", () => inner.GetTopicsAsync(filter, ct));
+
     private Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory) =>
         cache.GetOrCreateAsync(key, async entry =>
         {

@@ -8,4 +8,5 @@ public interface IAnalyticsQueryService
     Task<RequestAnalyticsResponse> GetRequestsAsync(PeriodFilter filter, CancellationToken ct);
     Task<KpiValuesResponse> GetKpiValuesAsync(PeriodFilter filter, IReadOnlyList<string>? codes, CancellationToken ct);
     Task<CategoryExplorerResponse> GetCategoryTreeAsync(PeriodFilter filter, CancellationToken ct);
+    Task<TopicExplorerResponse> GetTopicsAsync(PeriodFilter filter, CancellationToken ct);
 }

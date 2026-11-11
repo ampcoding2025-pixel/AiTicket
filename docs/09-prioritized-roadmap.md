@@ -86,9 +86,10 @@ Deliverables:
 
 ---
 
-### P4 — Historical analytics & offline NLP (not automation)
+### P4 — Historical analytics & offline NLP (not automation) — **STARTED**
 **Why:** Match/exceed observed org analysis with measurable quality.
 
+- [x] Taxonomy baseline topics API + UI (`docs/14-p4-topics-baseline.md`) — Subject volume, not NLP
 1. Topic models (TF-IDF baseline → BERTopic Persian) on scrubbed Cookie text
 2. Stability check of topics across years
 3. Similar-case prototype (embeddings) + precision@k sampled by experts
@@ -115,7 +116,7 @@ Deliverables:
 
 **P1–P3 core complete.** API serves executive/requests/categories/answers/KPIs with cache; web can use `NEXT_PUBLIC_DATA_PROVIDER=api`.
 
-**Next:** stakeholder sign-off on eligibility/resolved rules, or start **P4** offline NLP (topics / similar-case prototype).
+**Next:** P4 offline NLP (TF-IDF / similar-case on scrubbed captions), or stakeholder sign-off on eligibility/resolved rules.
 
 We will **not** yet: train production classifiers, call ChatGPT on citizen text at scale, or write to Didban.
 

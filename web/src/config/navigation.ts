@@ -33,7 +33,7 @@ export const navigation: NavGroup[] = [
       { id: "request-analytics", label: "تحلیل درخواست‌ها", href: "/analytics/requests", maturity: "active" },
       { id: "complaint-analytics", label: "تحلیل شکایات", href: "/analytics/complaints", maturity: "planned" },
       { id: "category-analysis", label: "تحلیل دسته‌بندی", href: "/analytics/categories", maturity: "active" },
-      { id: "topics", label: "کاوش موضوع و خوشه", href: "/analytics/topics", maturity: "mock" },
+      { id: "topics", label: "کاوش موضوع و خوشه", href: "/analytics/topics", maturity: "active" },
       { id: "sentiment", label: "تحلیل احساسات", href: "/analytics/sentiment", maturity: "planned" },
       { id: "trends", label: "تحلیل روند", href: "/analytics/trends", maturity: "planned" },
       { id: "geo", label: "تحلیل جغرافیایی / شعب", href: "/analytics/geo", maturity: "planned" },

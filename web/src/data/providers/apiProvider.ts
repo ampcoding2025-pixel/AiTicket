@@ -14,6 +14,7 @@ import type {
   NamedValue,
   RequestAnalyticsData,
   TaxonomyLevel,
+  TopicExplorerData,
 } from "@/data/providers/types";
 import { mockAnalyticsProvider } from "@/data/providers/mockProvider";
 
@@ -324,7 +325,66 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
     };
   },
 
-  getTopicExplorer: () => mockAnalyticsProvider.getTopicExplorer(),
+  async getTopicExplorer(): Promise<TopicExplorerData> {
+    const data = await fetchJson<{
+      meta: ApiMeta;
+      ruleSetVersion: string;
+      method: string;
+      caveat: string;
+      summary: ApiKpi[];
+      clusters: {
+        id: string;
+        name: string;
+        size: number;
+        sharePercent: number;
+        growthPercent: number | null;
+        coherence: number | null;
+        method: string;
+        keywords: string[];
+        linkedSubjectNames: string[];
+        evolution: { label: string; count: number }[];
+        samples: { id: string; caption: string; className: string }[];
+      }[];
+      relations: { source: string; target: string; weight: number; reason: string }[];
+    }>("/api/v1/analytics/topics");
+
+    return {
+      meta: {
+        source: "didban",
+        label: `کاوش موضوع · ${data.method} · ${data.ruleSetVersion}`,
+        periodLabel: data.meta.periodLabel,
+        modelStatus: "taxonomy_baseline",
+        caveat: data.caveat,
+      },
+      summary: data.summary.map(mapKpi),
+      clusters: data.clusters.map((c) => ({
+        id: c.id,
+        name: c.name,
+        size: Number(c.size),
+        sharePercent: Number(c.sharePercent),
+        growthPercent: Number(c.growthPercent ?? 0),
+        coherence: Number(c.coherence ?? 0),
+        method: c.method,
+        keywords: c.keywords ?? [],
+        linkedSubjectNames: c.linkedSubjectNames ?? [],
+        evolution: (c.evolution ?? []).map((e) => ({
+          label: e.label,
+          count: Number(e.count),
+        })),
+        samples: (c.samples ?? []).map((s) => ({
+          id: s.id,
+          caption: s.caption,
+          className: s.className,
+        })),
+      })),
+      relations: (data.relations ?? []).map((r) => ({
+        source: r.source,
+        target: r.target,
+        weight: Number(r.weight),
+        reason: r.reason,
+      })),
+    };
+  },
 
   async getKpiMonitoring(): Promise<KpiMonitoringData> {
     const catalog = await mockAnalyticsProvider.getKpiMonitoring();

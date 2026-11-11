@@ -142,10 +142,10 @@ export type TopicRelationEdge = {
 
 export type TopicExplorerData = {
   meta: {
-    source: "mock";
+    source: DataSourceKind;
     label: string;
     periodLabel: string;
-    modelStatus: "planned" | "offline_batch" | "production";
+    modelStatus: "planned" | "offline_batch" | "production" | "taxonomy_baseline";
     caveat: string;
   };
   summary: ExecutiveKpi[];

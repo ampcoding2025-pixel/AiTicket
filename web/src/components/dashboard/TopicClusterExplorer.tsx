@@ -100,10 +100,10 @@ export function TopicClusterExplorer() {
       name: c.name,
       symbolSize: Math.max(28, Math.min(70, c.size / 55)),
       value: c.size,
-      category: c.id === "t8" ? 1 : 0,
+      category: 0,
       label: { show: true, fontSize: 10 },
       itemStyle: {
-        color: c.id === selectedId ? amber : c.id === "t8" ? "#94a3b8" : brand,
+        color: c.id === selectedId ? amber : brand,
       },
     }));
     const links = data.relations.map((e) => ({
@@ -168,16 +168,26 @@ export function TopicClusterExplorer() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-950">
+      <div
+        className={
+          data.meta.modelStatus === "taxonomy_baseline"
+            ? "rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-950"
+            : "rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-950"
+        }
+      >
         <div className="flex flex-wrap items-center gap-2">
           <Sparkles className="h-4 w-4" />
           <span className="font-semibold">وضعیت مدل:</span>
           <span className="rounded bg-white/80 px-2 py-0.5 text-xs font-medium">
-            برنامه‌ریزی‌شده / نمایشی
+            {data.meta.modelStatus === "taxonomy_baseline"
+              ? "پایه تاکسونومی دیده‌بان (نه NLP)"
+              : data.meta.modelStatus === "planned"
+                ? "برنامه‌ریزی‌شده / نمایشی"
+                : data.meta.modelStatus}
           </span>
-          <span className="text-violet-800">{data.meta.label}</span>
+          <span>{data.meta.label}</span>
         </div>
-        <p className="mt-2 text-xs leading-5 text-violet-900/80">{data.meta.caveat}</p>
+        <p className="mt-2 text-xs leading-5 opacity-80">{data.meta.caveat}</p>
       </div>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
