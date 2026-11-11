@@ -59,7 +59,8 @@ export function KpiCard({
       <button
         type="button"
         onClick={() => onOpen?.(kpi.id)}
-        className="flex w-full items-baseline justify-between gap-3 py-1.5 text-right text-sm text-slate-600 hover:text-slate-900"
+        aria-label={`${kpi.label}: ${formatValue(kpi)} — جزئیات`}
+        className="flex w-full cursor-pointer items-baseline justify-between gap-3 py-1.5 text-right text-sm text-slate-600 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
       >
         <span className="min-w-0 truncate">{kpi.label}</span>
         <span className="shrink-0 font-medium text-slate-500">{formatValue(kpi)}</span>
@@ -74,10 +75,11 @@ export function KpiCard({
     <button
       type="button"
       onClick={() => onOpen?.(kpi.id)}
+      aria-label={`${kpi.label}: ${formatValue(kpi)} — برای جزئیات کلیک کنید`}
       className={cn(
-        "text-right transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]",
+        "cursor-pointer text-right transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]",
         isSpotlight &&
-          "rounded-lg border-2 border-amber-400 bg-white p-5 ring-1 ring-amber-100",
+          "rounded-lg border-2 border-amber-400 bg-white p-5 ring-1 ring-amber-100 hover:border-amber-500",
         emphasis === "primary" &&
           "rounded-lg border border-[var(--border)] bg-white p-4 hover:border-slate-300",
         isSecondary && "rounded-md border border-transparent bg-slate-50/80 p-3 hover:bg-slate-50",
@@ -88,7 +90,7 @@ export function KpiCard({
         <div className={cn("leading-5 text-[var(--muted)]", isSpotlight ? "text-sm" : "text-xs")}>
           {kpi.label}
           {exception ? (
-            <span className="mr-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900">
+            <span className="mr-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">
               استثناء
             </span>
           ) : null}
@@ -96,7 +98,7 @@ export function KpiCard({
         {kpi.feasibility ? (
           <span
             className={cn(
-              "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium",
+              "shrink-0 rounded px-1.5 py-0.5 text-xs font-medium",
               feasibilityStyle[kpi.feasibility],
             )}
           >
@@ -114,19 +116,20 @@ export function KpiCard({
       >
         {formatValue(kpi)}
       </div>
-      {unit ? <div className="mt-1 text-[11px] text-slate-400">{unit}</div> : null}
+      {unit ? <div className="mt-1 text-xs text-slate-500">{unit}</div> : null}
       {hasDelta ? (
         <div
           className={cn(
-            "mt-3 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
+            "mt-3 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
             up ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700",
           )}
         >
-          {up ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+          {up ? <TrendingUp className="h-3.5 w-3.5" aria-hidden /> : <TrendingDown className="h-3.5 w-3.5" aria-hidden />}
           {formatFaPercent(Math.abs(kpi.deltaPercent!))}
         </div>
       ) : null}
-      {kpi.hint ? <p className="mt-2 text-[11px] leading-4 text-slate-400">{kpi.hint}</p> : null}
+      {kpi.hint ? <p className="mt-2 text-xs leading-4 text-slate-500">{kpi.hint}</p> : null}
+      <p className="mt-2 text-xs text-slate-400">جزئیات ←</p>
     </button>
   );
 }

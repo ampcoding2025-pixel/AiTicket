@@ -11,6 +11,8 @@ type DashboardFilterContextValue = {
   filters: AnalyticsQueryFilters;
   setPeriod: (period: PeriodKey) => void;
   setSubjectClassId: (id: number | null) => void;
+  resetFilters: () => void;
+  isDefaultFilters: boolean;
 };
 
 const DashboardFilterContext = createContext<DashboardFilterContextValue | null>(null);
@@ -24,6 +26,10 @@ export function DashboardFilterProvider({ children }: { children: ReactNode }) {
       setPeriod: (period) => setFilters((prev) => ({ ...prev, period })),
       setSubjectClassId: (subjectClassId) =>
         setFilters((prev) => ({ ...prev, subjectClassId })),
+      resetFilters: () => setFilters(DEFAULT_FILTERS),
+      isDefaultFilters:
+        filters.period === DEFAULT_FILTERS.period &&
+        filters.subjectClassId === DEFAULT_FILTERS.subjectClassId,
     }),
     [filters],
   );

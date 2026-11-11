@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { EChartsOption } from "echarts";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { KpiCard } from "@/components/dashboard/KpiCard";
@@ -52,6 +52,95 @@ function horizontalBarOption(
       },
     ],
   };
+}
+
+function KpiDetailDialog({
+  label,
+  periodLabel,
+  value,
+  hint,
+  onClose,
+}: {
+  label: string;
+  periodLabel: string;
+  value: string;
+  hint?: string;
+  onClose: () => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = "kpi-detail-title";
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current) return;
+      const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      previouslyFocused?.focus?.();
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-4 sm:items-center"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="w-full max-w-lg rounded-xl border border-[var(--border)] bg-white p-5 shadow-lg"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 id={titleId} className="text-lg font-bold text-slate-900">
+              {label}
+            </h3>
+            <p className="mt-1 text-sm text-[var(--muted)]">بازه «{periodLabel}»</p>
+          </div>
+          <button
+            ref={closeRef}
+            type="button"
+            className="rounded-md px-2 py-1 text-sm text-slate-500 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+            onClick={onClose}
+          >
+            بستن
+          </button>
+        </div>
+        <div className="mt-4 rounded-lg bg-slate-50 p-4">
+          <div className="text-3xl font-bold text-slate-900">{value}</div>
+          {hint ? <p className="mt-2 text-xs text-slate-500">{hint}</p> : null}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -187,6 +276,7 @@ export function ExecutiveDashboard() {
 
       <section>
         <SectionLabel>شاخص‌های محوری داستان</SectionLabel>
+        <p className="mb-2 text-xs text-slate-500">برای جزئیات هر شاخص کلیک کنید.</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {spotlightKpis.map((kpi) => (
             <KpiCard
@@ -379,39 +469,21 @@ export function ExecutiveDashboard() {
       </section>
 
       {selected ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-4 sm:items-center">
-          <div className="w-full max-w-lg rounded-xl border border-[var(--border)] bg-white p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">{selected.label}</h3>
-                <p className="mt-1 text-sm text-[var(--muted)]">
-                  بازه «{data.meta.periodLabel}»
-                </p>
-              </div>
-              <button
-                type="button"
-                className="rounded-md px-2 py-1 text-sm text-slate-500 hover:bg-slate-100"
-                onClick={() => setSelectedKpi(null)}
-              >
-                بستن
-              </button>
-            </div>
-            <div className="mt-4 rounded-lg bg-slate-50 p-4">
-              <div className="text-3xl font-bold text-slate-900">
-                {selected.feasibility === "unavailable" || selected.value == null
-                  ? "—"
-                  : selected.unit === "percent"
-                    ? formatFaPercent(selected.value)
-                    : selected.unit === "days"
-                      ? formatFaNumber(selected.value, 1)
-                      : formatFaNumber(selected.value)}
-              </div>
-              {selected.hint ? (
-                <p className="mt-2 text-xs text-slate-500">{selected.hint}</p>
-              ) : null}
-            </div>
-          </div>
-        </div>
+        <KpiDetailDialog
+          label={selected.label}
+          periodLabel={data.meta.periodLabel}
+          value={
+            selected.feasibility === "unavailable" || selected.value == null
+              ? "—"
+              : selected.unit === "percent"
+                ? formatFaPercent(selected.value)
+                : selected.unit === "days"
+                  ? formatFaNumber(selected.value, 1)
+                  : formatFaNumber(selected.value)
+          }
+          hint={selected.hint}
+          onClose={() => setSelectedKpi(null)}
+        />
       ) : null}
     </div>
   );

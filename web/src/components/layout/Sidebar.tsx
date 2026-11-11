@@ -13,7 +13,7 @@ function MaturityBadge({ maturity }: { maturity: NavMaturity }) {
     planned: "bg-slate-100 text-slate-500",
   };
   return (
-    <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-medium", styles[maturity])}>
+    <span className={cn("rounded px-1.5 py-0.5 text-xs font-medium", styles[maturity])}>
       {maturityLabel[maturity]}
     </span>
   );

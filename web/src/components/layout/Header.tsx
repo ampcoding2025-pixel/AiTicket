@@ -1,9 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { CalendarRange, Building2, Filter, Download } from "lucide-react";
+import { CalendarRange, Building2, Filter, Download, RotateCcw } from "lucide-react";
 import { useDashboardFilters } from "@/data/DashboardFilterContext";
-import { SUBJECT_CLASS_OPTIONS, type PeriodKey } from "@/data/filters";
+import {
+  periodToRange,
+  SUBJECT_CLASS_OPTIONS,
+  type PeriodKey,
+} from "@/data/filters";
+import { cn } from "@/lib/utils";
 
 const titles: Record<string, { title: string; subtitle: string }> = {
   "/": {
@@ -64,16 +69,21 @@ const titles: Record<string, { title: string; subtitle: string }> = {
   },
 };
 
+const selectFocus =
+  "rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-1";
+
 export function Header() {
   const pathname = usePathname();
-  const { filters, setPeriod, setSubjectClassId } = useDashboardFilters();
+  const { filters, setPeriod, setSubjectClassId, resetFilters, isDefaultFilters } =
+    useDashboardFilters();
   const meta = titles[pathname] ?? {
     title: "پلتفرم هوش تحلیلی",
     subtitle: "نسخه اولیه Outside-In",
   };
 
-  const classValue =
-    SUBJECT_CLASS_OPTIONS.find((o) => o.id === filters.subjectClassId)?.value ?? "all";
+  const classOption =
+    SUBJECT_CLASS_OPTIONS.find((o) => o.id === filters.subjectClassId) ?? SUBJECT_CLASS_OPTIONS[0];
+  const periodLabel = periodToRange(filters.period).label;
 
   return (
     <header className="border-b border-[var(--border)] bg-white/90 px-5 py-4 backdrop-blur">
@@ -85,9 +95,9 @@ export function Header() {
 
         <div className="flex flex-wrap items-center gap-2">
           <label className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm text-slate-700">
-            <CalendarRange className="h-4 w-4 text-slate-400" />
+            <CalendarRange className="h-4 w-4 text-slate-400" aria-hidden />
             <select
-              className="bg-transparent outline-none"
+              className={cn("bg-transparent", selectFocus)}
               value={filters.period}
               aria-label="بازه زمانی"
               onChange={(e) => setPeriod(e.target.value as PeriodKey)}
@@ -103,17 +113,17 @@ export function Header() {
             className="inline-flex cursor-not-allowed items-center gap-2 rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-400"
             title="فیلتر واحد سازمانی پس از فهرست شناسه Department از API فعال می‌شود"
           >
-            <Building2 className="h-4 w-4" />
-            <select className="bg-transparent outline-none" disabled defaultValue="all" aria-label="واحد سازمانی">
+            <Building2 className="h-4 w-4" aria-hidden />
+            <select className="bg-transparent" disabled defaultValue="all" aria-label="واحد سازمانی">
               <option value="all">همه واحدها (غیرفعال)</option>
             </select>
           </label>
 
           <label className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm text-slate-700">
-            <Filter className="h-4 w-4 text-slate-400" />
+            <Filter className="h-4 w-4 text-slate-400" aria-hidden />
             <select
-              className="bg-transparent outline-none"
-              value={classValue}
+              className={cn("bg-transparent", selectFocus)}
+              value={classOption.value}
               aria-label="طبقه درخواست"
               onChange={(e) => {
                 const opt = SUBJECT_CLASS_OPTIONS.find((o) => o.value === e.target.value);
@@ -130,14 +140,53 @@ export function Header() {
 
           <button
             type="button"
+            onClick={resetFilters}
+            disabled={isDefaultFilters}
+            aria-label="بازنشانی فیلترها به پیش‌فرض"
+            title={
+              isDefaultFilters
+                ? "فیلترها در حالت پیش‌فرض هستند"
+                : "بازگشت به کل دوره تاریخی و همه طبقات"
+            }
+            className={cn(
+              "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]",
+              isDefaultFilters
+                ? "cursor-not-allowed border-transparent text-slate-400"
+                : "border-[var(--border)] bg-white text-slate-700 hover:bg-slate-50",
+            )}
+          >
+            <RotateCcw className="h-4 w-4" aria-hidden />
+            بازنشانی فیلترها
+          </button>
+
+          <button
+            type="button"
             disabled
             title="خروجی پس از پایدار شدن فیلتر بازه فعال می‌شود"
-            className="inline-flex cursor-not-allowed items-center gap-2 rounded-md bg-slate-300 px-3 py-2 text-sm font-medium text-slate-600"
+            aria-disabled="true"
+            className="inline-flex cursor-not-allowed items-center gap-2 rounded-md border border-dashed border-slate-300 bg-transparent px-3 py-2 text-sm font-medium text-slate-400"
           >
-            <Download className="h-4 w-4" />
-            خروجی گزارش
+            <Download className="h-4 w-4" aria-hidden />
+            خروجی گزارش (به‌زودی)
           </button>
         </div>
+      </div>
+
+      <div
+        className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--border)] pt-3"
+        aria-label="فیلترهای فعال"
+      >
+        <span className="text-xs text-slate-500">فیلترهای فعال:</span>
+        <span className="rounded bg-slate-100 px-2 py-1 text-xs font-medium text-slate-800">
+          بازه: {periodLabel}
+        </span>
+        <span className="rounded bg-slate-100 px-2 py-1 text-xs font-medium text-slate-800">
+          طبقه: {classOption.label}
+        </span>
+        <span className="rounded border border-dashed border-slate-300 px-2 py-1 text-xs text-slate-400">
+          واحد: همه (غیرفعال)
+        </span>
       </div>
     </header>
   );

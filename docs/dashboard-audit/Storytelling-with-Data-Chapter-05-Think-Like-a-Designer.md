@@ -223,4 +223,16 @@ Chapter 1–4 topics were referenced only where they affect usability or design 
 
 ## Remediations
 
-_Status: audit only — implementation not yet applied._
+_Status: applied 2026-11-11 — Chapter 5 design / usability fixes (code). Stakeholder user-testing (C5.19) remains a process gap._
+
+| # | Change | Files | Criteria addressed |
+|---|--------|-------|--------------------|
+| 1 | Filter reset («بازنشانی فیلترها») + `resetFilters` / `isDefaultFilters` | `DashboardFilterContext.tsx`, `Header.tsx` | C5.06 |
+| 2 | Active-filter chip row under header | `Header.tsx` | C5.05 |
+| 3 | Ghost/dashed disabled export («به‌زودی»); select focus rings | `Header.tsx` | C5.01, C5.04, C5.14 |
+| 4 | KPI `cursor-pointer`, aria-labels, «جزئیات ←» cue; larger chip text | `KpiCard.tsx`, `ExecutiveDashboard.tsx` | C5.01, C5.03, C5.11 |
+| 5 | Chart accessible name via ChartCard context + `role="img"`; section `aria-labelledby` | `ChartCard.tsx`, `EChart.tsx` | C5.15 |
+| 6 | KPI modal: `role="dialog"`, `aria-modal`, Escape, focus trap/return, backdrop click | `ExecutiveDashboard.tsx` | C5.13, C5.14, C5.08 |
+| 7 | Sidebar maturity chips → `text-xs` | `Sidebar.tsx` | C5.11 |
+
+**Still open (process):** schedule 3-user walkthrough and eligibility/resolved sign-off (C5.19 / C5.20).
