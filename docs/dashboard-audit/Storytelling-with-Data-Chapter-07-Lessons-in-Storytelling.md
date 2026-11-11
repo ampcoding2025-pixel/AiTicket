@@ -238,4 +238,14 @@ In the selected period, Didban shows large case volume, a substantial complaint 
 
 ## Remediations
 
-_Status: audit only — implementation not yet applied._
+_Status: applied 2026-11-11 — Chapter 7 narrative reorder and closing beat._
+
+| # | Change | Files | Criteria |
+|---|--------|-------|----------|
+| 1 | Story order: Big Idea → نتیجهٔ اصلی → شواهد حجم → شواهد پوشش/موضوعات → **نتیجه و اقدام** (last) | `ExecutiveDashboard.tsx` | C7.03, C7.04, C7.05, C7.18 |
+| 2 | Coverage «چه چیزی هست/نیست» note (Availability vs Validity; no causal claim) | `ExecutiveDashboard.tsx` | C7.07, C7.15, C7.06 |
+| 3 | End checklist «پرسش‌ها / گام‌های بعدی» with existing links | `ExecutiveDashboard.tsx` | C7.20 |
+| 4 | Story-beat SectionLabels + lead transitions | `ExecutiveDashboard.tsx` | C7.08, C7.09, C7.10 |
+| 5 | Terminology gloss once under Big Idea | `ExecutiveDashboard.tsx` | C7.11 |
+| 6 | Removed duplicate coverage hero; single evidence placement | `ExecutiveDashboard.tsx` | C7.12 |
+| 7 | Collapsed appendix for needs_rules / unavailable / FinishTime | `ExecutiveDashboard.tsx` | C7.13, C7.19 |
