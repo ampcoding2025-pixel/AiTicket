@@ -46,6 +46,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | Phase 2 AI Performance shell (Mock) | Done (`/ai/performance`) |
 | Phase 2 Admin shells (Mock) | Done (`/admin/*`) |
 | **Phase 2 Presentation Layer** | **Complete (Mock, Behzisti-shaped)** |
+| Phase 3 API contracts (docs) | Started — `docs/11`–`13` + `docs/openapi/analytics-v1.yaml` |
 | Didban schema discovery | **Done (read-only)** — see `docs/08` |
 | KPI feasibility mapping | **Done (first pass)** — see `docs/04` |
 | Prioritized roadmap | `docs/09-prioritized-roadmap.md` |

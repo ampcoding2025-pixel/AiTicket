@@ -39,9 +39,11 @@ export type AnswerCoverage = {
   caveat: string;
 };
 
+export type DataSourceKind = "mock" | "didban";
+
 export type ExecutiveDashboardData = {
   meta: {
-    source: "mock";
+    source: DataSourceKind;
     label: string;
     periodLabel: string;
     generatedAt: string;

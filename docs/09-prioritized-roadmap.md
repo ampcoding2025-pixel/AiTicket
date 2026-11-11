@@ -52,17 +52,18 @@ Method: Outside-In (brief) + verified Didban reality (read-only)
 
 ---
 
-### P2 — API contracts + analytical field map
+### P2 — API contracts + analytical field map — **IN PROGRESS**
 **Why:** Frontend must not couple to raw Didban tables.
 
 Deliverables:
 
-- OpenAPI for executive KPIs, filters, drill-down
-- Mapping doc: DTO ← Cookie/Inform/Subject*/Department/CookieFlow
-- Eligibility & resolved-status rules document (signed off)
-- PII minimization matrix for each endpoint
+- [x] OpenAPI draft — `docs/openapi/analytics-v1.yaml` + `docs/11-api-contracts.md`
+- [x] Mapping doc — `docs/12-didban-field-map.md`
+- [x] Eligibility & resolved-status rules — **draft** in `12` (awaiting business sign-off)
+- [x] PII minimization matrix — `docs/13-pii-matrix.md`
 
-**Exit:** Contracts frozen enough to implement backend without UI redesign.
+**Exit:** Contracts frozen enough to implement backend without UI redesign.  
+**Remaining:** stakeholder sign-off on `eligibility-v0.1` / `resolved-v0.1`; then P3 backend skeleton.
 
 ---
 

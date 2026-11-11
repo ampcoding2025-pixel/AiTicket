@@ -1,0 +1,422 @@
+openapi: 3.0.3
+info:
+  title: AiTicket Analytics API
+  version: 1.0.0-draft
+  description: |
+    Frontend-driven contracts for the Social/Organizational Intelligent Analytics Platform.
+    Didban is read-only. Unavailable KPIs return null values with feasibility flags.
+servers:
+  - url: /api/v1
+tags:
+  - name: Analytics
+  - name: Knowledge
+  - name: KPIs
+  - name: Reports
+  - name: AI
+  - name: Admin
+paths:
+  /analytics/executive:
+    get:
+      tags: [Analytics]
+      summary: Executive dashboard aggregates
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/DepartmentId'
+        - $ref: '#/components/parameters/SubjectClassId'
+        - $ref: '#/components/parameters/ChannelId'
+        - $ref: '#/components/parameters/RegionId'
+        - $ref: '#/components/parameters/ZoneId'
+      responses:
+        '200':
+          description: Executive dashboard payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutiveDashboardResponse'
+        '502':
+          $ref: '#/components/responses/UpstreamDidban'
+  /analytics/requests:
+    get:
+      tags: [Analytics]
+      summary: Request and complaint analytics
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/DepartmentId'
+        - $ref: '#/components/parameters/SubjectClassId'
+      responses:
+        '200':
+          description: Request analytics payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestAnalyticsResponse'
+  /analytics/categories/tree:
+    get:
+      tags: [Analytics]
+      summary: Taxonomy tree with counts
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+      responses:
+        '200':
+          description: Category explorer payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryExplorerResponse'
+  /analytics/topics:
+    get:
+      tags: [Analytics]
+      summary: Topic and cluster explorer
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+      responses:
+        '200':
+          description: Topic explorer payload (may be empty if model not ready)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicExplorerResponse'
+  /knowledge/answers/summary:
+    get:
+      tags: [Knowledge]
+      summary: Historical answer coverage summary
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+      responses:
+        '200':
+          description: Answer coverage summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerSummaryResponse'
+  /knowledge/answers/cases:
+    get:
+      tags: [Knowledge]
+      summary: Paged answer intelligence cases (redacted)
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - name: validity
+          in: query
+          schema:
+            type: string
+            enum: [available_unvalidated, validity_unknown, needs_expert_review, no_answer]
+      responses:
+        '200':
+          description: Paged redacted cases
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerCasesPage'
+  /kpis/dictionary:
+    get:
+      tags: [KPIs]
+      summary: Static KPI dictionary
+      responses:
+        '200':
+          description: Dictionary items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/KpiDictionaryItem'
+  /kpis/values:
+    get:
+      tags: [KPIs]
+      summary: Computed KPI values for period
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: codes
+          in: query
+          schema:
+            type: string
+            example: A1,A2,B1,D1
+      responses:
+        '200':
+          description: KPI values with feasibility and ruleSetVersion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiValuesResponse'
+  /reports:
+    get:
+      tags: [Reports]
+      summary: Standard report catalog
+      responses:
+        '200':
+          description: Report list
+  /reports/{reportId}/exports:
+    post:
+      tags: [Reports]
+      summary: Queue report export job
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [format]
+              properties:
+                format:
+                  type: string
+                  enum: [pdf, xlsx]
+                filters:
+                  $ref: '#/components/schemas/PeriodFilter'
+      responses:
+        '202':
+          description: Export accepted
+  /ai/performance:
+    get:
+      tags: [AI]
+      summary: AI monitoring shell
+      responses:
+        '200':
+          description: Metrics must be null when model not trained
+  /admin/sources:
+    get:
+      tags: [Admin]
+      summary: Data source health
+      responses:
+        '200':
+          description: Source status list
+components:
+  parameters:
+    From:
+      name: from
+      in: query
+      schema:
+        type: string
+        format: date
+    To:
+      name: to
+      in: query
+      schema:
+        type: string
+        format: date
+    DepartmentId:
+      name: departmentId
+      in: query
+      schema:
+        type: integer
+    SubjectClassId:
+      name: subjectClassId
+      in: query
+      schema:
+        type: integer
+    ChannelId:
+      name: channelId
+      in: query
+      schema:
+        type: integer
+    RegionId:
+      name: regionId
+      in: query
+      schema:
+        type: integer
+    ZoneId:
+      name: zoneId
+      in: query
+      schema:
+        type: integer
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+  responses:
+    UpstreamDidban:
+      description: Didban read failure
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+    PeriodFilter:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        departmentId:
+          type: integer
+        subjectClassId:
+          type: integer
+        channelId:
+          type: integer
+        regionId:
+          type: integer
+        zoneId:
+          type: integer
+    Meta:
+      type: object
+      required: [source, generatedAt, periodLabel]
+      properties:
+        source:
+          type: string
+          enum: [didban, mock]
+        generatedAt:
+          type: string
+          format: date-time
+        periodLabel:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+    Feasibility:
+      type: string
+      enum: [feasible, needs_rules, weak_proxy, unavailable, planned_m2, illustrative]
+    KpiCard:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        value:
+          type: number
+          nullable: true
+        unit:
+          type: string
+        feasibility:
+          $ref: '#/components/schemas/Feasibility'
+        hint:
+          type: string
+    ExecutiveDashboardResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/Meta'
+        kpis:
+          type: array
+          items:
+            $ref: '#/components/schemas/KpiCard'
+    RequestAnalyticsResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/Meta'
+        summary:
+          type: array
+          items:
+            $ref: '#/components/schemas/KpiCard'
+    CategoryExplorerResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/Meta'
+        tree:
+          type: array
+          items:
+            type: object
+    TopicExplorerResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/Meta'
+        clusters:
+          type: array
+          items:
+            type: object
+    AnswerSummaryResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/Meta'
+        historicalAvailablePercent:
+          type: number
+        currentlyValidPercent:
+          type: number
+          nullable: true
+    AnswerCasesPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+    KpiDictionaryItem:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        feasibility:
+          $ref: '#/components/schemas/Feasibility'
+        formula:
+          type: string
+    KpiValuesResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/Meta'
+        values:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              feasibility:
+                $ref: '#/components/schemas/Feasibility'
+              value:
+                type: number
+                nullable: true
+              unit:
+                type: string
+              ruleSetVersion:
+                type: string
+              computedAt:
+                type: string
+                format: date-time
