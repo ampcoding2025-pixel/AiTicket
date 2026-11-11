@@ -167,4 +167,16 @@ Chapter 1–3 topics (context completeness, chart family, clutter volume) were r
 
 ## Remediations
 
-_Status: audit only — implementation not yet applied._
+_Status: applied 2026-11-11 — Chapter 4 attention fixes._
+
+| # | Change | Files | Criteria addressed |
+|---|--------|-------|--------------------|
+| 1 | Big Idea strip: amber right-border accent, `text-xl`/`text-2xl font-bold`, promote top «توجه» insight into strip | `ExecutiveDashboard.tsx` | C4.01, C4.12, C4.19 |
+| 2 | Soften Header page title to `text-base font-semibold text-slate-700`; filter icons slate | `Header.tsx` | C4.12, C4.19 |
+| 3 | Spotlight KPIs: volume (`total-requests`) + coverage (`answer-coverage`) with `emphasis="spotlight"` (`text-3xl`, amber border) | `ExecutiveDashboard.tsx`, `KpiCard.tsx` | C4.03, C4.13 |
+| 4 | Demote mid-page coverage from `text-4xl` → `text-2xl`; note that spotlight already shows it | `ExecutiveDashboard.tsx` | C4.10, C4.02 |
+| 5 | Exception: «استثناء» on low coverage (&lt;15%); amber highlight on attention insights | `KpiCard.tsx`, `ExecutiveDashboard.tsx` | C4.17, C4.06 |
+| 6 | Feasible chips → neutral slate (not green-as-good); secondary cards flatter/`text-lg` | `KpiCard.tsx` | C4.04, C4.05, C4.02 |
+| 7 | Story links muted to slate (less teal competition with exception accent) | `ExecutiveDashboard.tsx` | C4.04 |
+
+**Post-fix attention order (intended):** Big Idea strip → spotlight volume + coverage → other feasible KPIs → charts → actions (attention accented) → demoted coverage detail.

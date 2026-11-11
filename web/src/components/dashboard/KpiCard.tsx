@@ -25,22 +25,29 @@ const feasibilityLabel: Record<KpiFeasibility, string> = {
   illustrative: "نمایشی",
 };
 
+/** Feasible = neutral slate (not “good performance”); amber = needs rules */
 const feasibilityStyle: Record<KpiFeasibility, string> = {
-  feasible: "bg-emerald-50 text-emerald-800",
-  needs_rules: "bg-amber-50 text-amber-800",
-  unavailable: "bg-slate-100 text-slate-500",
-  illustrative: "bg-sky-50 text-sky-800",
+  feasible: "bg-slate-100 text-slate-700",
+  needs_rules: "bg-amber-50 text-amber-900",
+  unavailable: "bg-slate-50 text-slate-500",
+  illustrative: "bg-slate-100 text-slate-600",
 };
+
+export type KpiEmphasis = "spotlight" | "primary" | "secondary";
 
 export function KpiCard({
   kpi,
   onOpen,
   compact,
+  emphasis = "primary",
+  exception,
 }: {
   kpi: ExecutiveKpi;
   onOpen?: (id: string) => void;
-  /** Plain text row for unavailable metrics */
   compact?: boolean;
+  emphasis?: KpiEmphasis;
+  /** Marks a business exception that should draw attention */
+  exception?: boolean;
 }) {
   const hasDelta = typeof kpi.deltaPercent === "number" && Number.isFinite(kpi.deltaPercent);
   const up = (kpi.deltaPercent ?? 0) >= 0;
@@ -60,17 +67,32 @@ export function KpiCard({
     );
   }
 
+  const isSpotlight = emphasis === "spotlight";
+  const isSecondary = emphasis === "secondary";
+
   return (
     <button
       type="button"
       onClick={() => onOpen?.(kpi.id)}
       className={cn(
-        "rounded-lg border border-[var(--border)] bg-white p-4 text-right transition hover:border-[var(--brand)]/35",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]",
+        "text-right transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]",
+        isSpotlight &&
+          "rounded-lg border-2 border-amber-400 bg-white p-5 ring-1 ring-amber-100",
+        emphasis === "primary" &&
+          "rounded-lg border border-[var(--border)] bg-white p-4 hover:border-slate-300",
+        isSecondary && "rounded-md border border-transparent bg-slate-50/80 p-3 hover:bg-slate-50",
+        exception && !isSpotlight && "border-amber-300",
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="text-xs leading-5 text-[var(--muted)]">{kpi.label}</div>
+        <div className={cn("leading-5 text-[var(--muted)]", isSpotlight ? "text-sm" : "text-xs")}>
+          {kpi.label}
+          {exception ? (
+            <span className="mr-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900">
+              استثناء
+            </span>
+          ) : null}
+        </div>
         {kpi.feasibility ? (
           <span
             className={cn(
@@ -82,7 +104,16 @@ export function KpiCard({
           </span>
         ) : null}
       </div>
-      <div className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{formatValue(kpi)}</div>
+      <div
+        className={cn(
+          "mt-2 font-bold tracking-tight text-slate-900",
+          isSpotlight && "text-3xl",
+          emphasis === "primary" && "text-xl",
+          isSecondary && "text-lg",
+        )}
+      >
+        {formatValue(kpi)}
+      </div>
       {unit ? <div className="mt-1 text-[11px] text-slate-400">{unit}</div> : null}
       {hasDelta ? (
         <div

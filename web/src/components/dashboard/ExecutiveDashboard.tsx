@@ -8,7 +8,7 @@ import { EChart } from "@/components/charts/EChart";
 import { getAnalyticsProvider } from "@/data/providers";
 import { useDashboardFilters } from "@/data/DashboardFilterContext";
 import type { ExecutiveDashboardData, NamedValue } from "@/data/providers/types";
-import { formatFaNumber, formatFaPercent } from "@/lib/utils";
+import { cn, formatFaNumber, formatFaPercent } from "@/lib/utils";
 import Link from "next/link";
 
 const brand = "#0f766e";
@@ -151,43 +151,71 @@ export function ExecutiveDashboard() {
   }
 
   const selected = data.kpis.find((k) => k.id === selectedKpi);
-  const primaryKpis = data.kpis.filter((k) => k.feasibility === "feasible");
+  const spotlightIds = new Set(["total-requests", "answer-coverage"]);
+  const spotlightKpis = data.kpis.filter((k) => spotlightIds.has(k.id));
+  const otherPrimaryKpis = data.kpis.filter(
+    (k) => k.feasibility === "feasible" && !spotlightIds.has(k.id),
+  );
   const secondaryKpis = data.kpis.filter(
     (k) => k.feasibility === "needs_rules" || k.feasibility === "illustrative",
   );
   const unavailableKpis = data.kpis.filter((k) => k.feasibility === "unavailable");
   const coverage = data.answerCoverage.historicalAvailablePercent;
+  const coverageIsException = coverage < 15;
+  const attentionInsight = data.insights.find((i) => i.severity === "attention");
   const finished = data.resolutionStatus[0];
   const open = data.resolutionStatus[1];
   const resTotal = (finished?.value ?? 0) + (open?.value ?? 0) || 1;
 
   return (
     <div className="space-y-8">
-      <section className="border-b border-[var(--border)] pb-4">
+      <section className="border-r-4 border-amber-500 bg-amber-50/40 py-4 pr-4 pl-1">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
           <span>مخاطب: مدیران ارشد / راهبران تحلیل (موقت)</span>
           <span>بازه: {data.meta.periodLabel}</span>
         </div>
-        <p className="mt-2 text-base font-semibold leading-7 text-slate-900">
+        <p className="mt-3 text-xl font-bold leading-8 text-slate-900 md:text-2xl">
           {data.bigIdea ?? "جمع‌بندی بازه هنوز ساخته نشده است."}
         </p>
+        {attentionInsight ? (
+          <p className="mt-3 text-sm leading-6 text-amber-950">
+            <span className="font-semibold">توجه: </span>
+            {attentionInsight.title} — {attentionInsight.body}
+          </p>
+        ) : null}
       </section>
 
       <section>
-        <SectionLabel>شاخص‌های اصلی</SectionLabel>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {primaryKpis.map((kpi) => (
-            <KpiCard key={kpi.id} kpi={kpi} onOpen={setSelectedKpi} />
+        <SectionLabel>شاخص‌های محوری داستان</SectionLabel>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {spotlightKpis.map((kpi) => (
+            <KpiCard
+              key={kpi.id}
+              kpi={kpi}
+              emphasis="spotlight"
+              exception={kpi.id === "answer-coverage" && coverageIsException}
+              onOpen={setSelectedKpi}
+            />
           ))}
         </div>
+        {otherPrimaryKpis.length ? (
+          <div className="mt-4">
+            <SectionLabel>سایر شاخص‌های قابل محاسبه</SectionLabel>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {otherPrimaryKpis.map((kpi) => (
+                <KpiCard key={kpi.id} kpi={kpi} emphasis="primary" onOpen={setSelectedKpi} />
+              ))}
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {secondaryKpis.length ? (
         <section>
           <SectionLabel>شاخص‌های نیازمند قاعده</SectionLabel>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
             {secondaryKpis.map((kpi) => (
-              <KpiCard key={kpi.id} kpi={kpi} onOpen={setSelectedKpi} />
+              <KpiCard key={kpi.id} kpi={kpi} emphasis="secondary" onOpen={setSelectedKpi} />
             ))}
           </div>
         </section>
@@ -213,16 +241,16 @@ export function ExecutiveDashboard() {
               subtitle={data.volumeTrend.length ? "ماهانه" : "سری زمانی در دسترس نیست"}
             >
               {data.volumeTrend.length ? (
-                <EChart option={volumeOption} height={300} />
+                <EChart option={volumeOption} height={280} />
               ) : (
-                <div className="flex h-[300px] items-center justify-center text-sm text-[var(--muted)]">
+                <div className="flex h-[280px] items-center justify-center text-sm text-[var(--muted)]">
                   نمودار روند برای این بازه خالی است.
                 </div>
               )}
             </ChartCard>
           </div>
           <ChartCard title="توزیع SubjectClass" subtitle="مقایسه طبقات درخواست" flat>
-            <EChart option={classOption} height={300} />
+            <EChart option={classOption} height={280} />
           </ChartCard>
         </div>
       </section>
@@ -230,35 +258,50 @@ export function ExecutiveDashboard() {
       <section>
         <SectionLabel>اقدام بر اساس شواهد</SectionLabel>
         <ol className="space-y-3 border-t border-[var(--border)] pt-3">
-          {data.insights.map((insight, idx) => (
-            <li key={insight.id} className="flex gap-3 text-sm">
-              <span className="mt-0.5 w-5 shrink-0 text-xs font-semibold text-slate-400">
-                {formatFaNumber(idx + 1)}
-              </span>
-              <div>
-                <div className="font-medium text-slate-900">
-                  {insight.title}
-                  <span className="mr-2 text-[11px] font-normal text-slate-400">
-                    {insight.severity === "attention"
-                      ? "توجه"
-                      : insight.severity === "opportunity"
-                        ? "فرصت"
-                        : "اطلاع"}
-                  </span>
+          {data.insights.map((insight, idx) => {
+            const isAttention = insight.severity === "attention";
+            return (
+              <li
+                key={insight.id}
+                className={cn(
+                  "flex gap-3 text-sm",
+                  isAttention && "rounded-md border border-amber-200 bg-amber-50/50 p-3",
+                )}
+              >
+                <span
+                  className={cn(
+                    "mt-0.5 w-5 shrink-0 text-xs font-semibold",
+                    isAttention ? "text-amber-800" : "text-slate-400",
+                  )}
+                >
+                  {formatFaNumber(idx + 1)}
+                </span>
+                <div>
+                  <div className={cn("font-medium", isAttention ? "text-amber-950" : "text-slate-900")}>
+                    {insight.title}
+                    <span
+                      className={cn(
+                        "mr-2 text-[11px] font-semibold",
+                        isAttention ? "text-amber-800" : "font-normal text-slate-400",
+                      )}
+                    >
+                      {isAttention ? "توجه" : insight.severity === "opportunity" ? "فرصت" : "اطلاع"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs leading-6 text-slate-600">{insight.body}</p>
                 </div>
-                <p className="mt-1 text-xs leading-6 text-slate-600">{insight.body}</p>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ol>
         <div className="mt-3 flex flex-wrap gap-3 text-xs">
-          <Link className="text-teal-800 underline-offset-2 hover:underline" href="/knowledge/answers">
+          <Link className="text-slate-700 underline-offset-2 hover:underline" href="/knowledge/answers">
             پوشش پاسخ تاریخی
           </Link>
-          <Link className="text-teal-800 underline-offset-2 hover:underline" href="/analytics/categories">
+          <Link className="text-slate-700 underline-offset-2 hover:underline" href="/analytics/categories">
             کاوش دسته‌بندی
           </Link>
-          <Link className="text-teal-800 underline-offset-2 hover:underline" href="/performance/kpi">
+          <Link className="text-slate-700 underline-offset-2 hover:underline" href="/performance/kpi">
             پایش شاخص‌ها
           </Link>
         </div>
@@ -269,16 +312,25 @@ export function ExecutiveDashboard() {
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <div className="xl:col-span-2">
             <ChartCard title="موضوعات پرتکرار" subtitle="رتبه حجم Subject" flat>
-              <EChart option={subjectOption} height={300} />
+              <EChart option={subjectOption} height={280} />
             </ChartCard>
           </div>
-          <ChartCard title="پوشش پاسخ شهروند" subtitle="Availability — Validity ناموجود" flat>
-            <div className="flex min-h-[200px] flex-col justify-center">
+          <ChartCard
+            title="پوشش پاسخ شهروند"
+            subtitle="جزئیات Availability — در شاخص محوری بالا هم آمده"
+            flat
+          >
+            <div className="flex min-h-[180px] flex-col justify-center">
+              {coverageIsException ? (
+                <span className="mb-2 w-fit rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900">
+                  استثناء · پایین
+                </span>
+              ) : null}
               <div className="text-xs text-[var(--muted)]">پاسخ شهروند موجود</div>
-              <div className="mt-1 text-4xl font-bold tracking-tight text-slate-900">
+              <div className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
                 {formatFaPercent(coverage)}
               </div>
-              <p className="mt-4 text-[11px] leading-5 text-slate-500">{data.answerCoverage.caveat}</p>
+              <p className="mt-3 text-[11px] leading-5 text-slate-500">{data.answerCoverage.caveat}</p>
             </div>
           </ChartCard>
         </div>
