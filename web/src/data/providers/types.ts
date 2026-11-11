@@ -1,3 +1,5 @@
+import type { AnalyticsQueryFilters } from "@/data/filters";
+
 export type KpiTone = "neutral" | "positive" | "warning" | "critical";
 
 /** Feasibility vs Didban field inspection — drives honest UI badges. */
@@ -37,7 +39,17 @@ export type AnswerCoverage = {
   needsReviewPercent: number | null;
   validityStatus: "unavailable" | "estimated" | "measured";
   caveat: string;
+  /** Decision split — complaint / guidance / ex-voice */
+  complaintAvailablePercent?: number | null;
+  guidanceAvailablePercent?: number | null;
+  complaintExVoiceAvailablePercent?: number | null;
+  voiceNoiseComplaintCount?: number | null;
+  voiceNoiseShareOfComplaintsPercent?: number | null;
+  autoRegisterComplaintCount?: number | null;
+  autoRegisterComplaintCoveragePercent?: number | null;
 };
+
+export type DecisionInsight = Insight & { priority?: string };
 
 export type DataSourceKind = "mock" | "didban";
 
@@ -63,9 +75,11 @@ export type ExecutiveDashboardData = {
     count: number;
     growthPercent: number | null;
   }[];
-  insights: Insight[];
+  insights: DecisionInsight[];
   /** One-sentence Ch.1 Big Idea from feasible facts only */
   bigIdea?: string;
+  /** Cache TTL hint for near-real-time UX (seconds) */
+  freshnessSeconds?: number;
 };
 
 export type RequestAnalyticsData = {
@@ -392,7 +406,10 @@ export type AdminCenterData = {
 };
 
 export interface AnalyticsDataProvider {
-  getExecutiveDashboard(filters?: AnalyticsQueryFilters): Promise<ExecutiveDashboardData>;
+  getExecutiveDashboard(
+    filters?: AnalyticsQueryFilters,
+    opts?: { fresh?: boolean },
+  ): Promise<ExecutiveDashboardData>;
   getRequestAnalytics(filters?: AnalyticsQueryFilters): Promise<RequestAnalyticsData>;
   getCategoryExplorer(filters?: AnalyticsQueryFilters): Promise<CategoryExplorerData>;
   getTopicExplorer(filters?: AnalyticsQueryFilters): Promise<TopicExplorerData>;

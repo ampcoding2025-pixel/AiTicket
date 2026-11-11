@@ -26,42 +26,30 @@ function apiPath(path: string, filters?: AnalyticsQueryFilters): string {
   return `${path}${filtersToQuery(filters ?? DEFAULT_FILTERS)}`;
 }
 
-function faNum(n: number, digits = 0): string {
-  return new Intl.NumberFormat("fa-IR", {
-    maximumFractionDigits: digits,
-    minimumFractionDigits: digits,
-  }).format(n);
-}
-
-function buildBigIdea(kpis: ExecutiveKpi[], periodLabel: string): string {
-  const total = kpis.find((k) => k.id === "total-requests");
-  const complaints = kpis.find((k) => k.id === "total-complaints");
-  const coverage = kpis.find((k) => k.id === "answer-coverage");
-  const sla = kpis.find((k) => k.id === "sla");
-
-  const parts: string[] = [];
-  if (total?.value != null) {
-    parts.push(`در ${periodLabel} حدود ${faNum(total.value)} پرونده`);
-  }
-  if (complaints?.value != null && total?.value) {
-    const share = Math.round((1000 * complaints.value) / total.value) / 10;
-    parts.push(`سهم شکایت ≈ ${faNum(share, 1)}٪`);
-  }
-  if (coverage?.value != null) {
-    parts.push(`پوشش پاسخ شهروند ≈ ${faNum(coverage.value, 1)}٪`);
-  }
-  if (sla?.feasibility === "unavailable") {
-    parts.push("SLA قابل محاسبه نیست");
-  }
-  return parts.length
-    ? `${parts.join("؛ ")}.`
-    : `بازه ${periodLabel} — شاخص قابل اتکا برای جمع‌بندی موجود نیست.`;
-}
-
 function sortKpisForExecutive(kpis: ExecutiveKpi[]): ExecutiveKpi[] {
+  const order = [
+    "total-requests",
+    "total-complaints",
+    "complaint-share",
+    "d1-complaint",
+    "d1-complaint-ex-voice",
+    "d1-guidance",
+    "voice-noise-share",
+    "auto-register-deadend",
+    "non-complaint",
+    "answer-coverage",
+  ];
+  const idx = (id: string) => {
+    const i = order.indexOf(id);
+    return i === -1 ? 100 : i;
+  };
   const rank = (f?: KpiFeasibility) =>
     f === "feasible" ? 0 : f === "needs_rules" ? 1 : f === "illustrative" ? 2 : 3;
-  return [...kpis].sort((a, b) => rank(a.feasibility) - rank(b.feasibility));
+  return [...kpis].sort((a, b) => {
+    const byFeas = rank(a.feasibility) - rank(b.feasibility);
+    if (byFeas !== 0) return byFeas;
+    return idx(a.id) - idx(b.id);
+  });
 }
 
 type ApiKpi = {
@@ -101,6 +89,23 @@ type ApiExecutive = {
     needsReviewPercent: number | null;
     validityStatus: string;
     caveat: string;
+    complaintAvailablePercent?: number | null;
+    guidanceAvailablePercent?: number | null;
+    complaintExVoiceAvailablePercent?: number | null;
+    voiceNoiseComplaintCount?: number | null;
+    voiceNoiseShareOfComplaintsPercent?: number | null;
+    autoRegisterComplaintCount?: number | null;
+    autoRegisterComplaintCoveragePercent?: number | null;
+  };
+  decisionBrief?: {
+    bigIdea: string;
+    insights: {
+      id: string;
+      title: string;
+      body: string;
+      severity: string;
+      priority: string;
+    }[];
   };
 };
 
@@ -238,11 +243,16 @@ function mapCategoryNode(node: ApiCategoryNode): CategoryNode {
 }
 
 export const apiAnalyticsProvider: AnalyticsDataProvider = {
-  async getExecutiveDashboard(filters?: AnalyticsQueryFilters): Promise<ExecutiveDashboardData> {
-    const data = await fetchJson<ApiExecutive>(apiPath("/api/v1/analytics/executive", filters));
+  async getExecutiveDashboard(
+    filters?: AnalyticsQueryFilters,
+    opts?: { fresh?: boolean },
+  ): Promise<ExecutiveDashboardData> {
+    const base = apiPath("/api/v1/analytics/executive", filters);
+    const url = opts?.fresh ? `${base}${base.includes("?") ? "&" : "?"}fresh=true` : base;
+    const data = await fetchJson<ApiExecutive>(url);
     const subjects = mapNamed(data.topSubjects);
     const kpis = sortKpisForExecutive(data.kpis.map(mapKpi));
-    const coverage = kpis.find((k) => k.id === "answer-coverage");
+    const brief = data.decisionBrief;
 
     return {
       meta: {
@@ -252,7 +262,8 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
         generatedAt: data.meta.generatedAt,
         domainNote: "موجودیت Cookie · SubjectClass/Subject/Department — فقط‌خواندنی",
       },
-      bigIdea: buildBigIdea(kpis, data.meta.periodLabel),
+      bigIdea: brief?.bigIdea,
+      freshnessSeconds: 180,
       kpis,
       volumeTrend: (data.volumeTrend ?? []).map((p) => ({
         label: p.label,
@@ -278,6 +289,16 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
             ? "unavailable"
             : "estimated",
         caveat: data.answerCoverage.caveat,
+        complaintAvailablePercent: data.answerCoverage.complaintAvailablePercent ?? null,
+        guidanceAvailablePercent: data.answerCoverage.guidanceAvailablePercent ?? null,
+        complaintExVoiceAvailablePercent:
+          data.answerCoverage.complaintExVoiceAvailablePercent ?? null,
+        voiceNoiseComplaintCount: data.answerCoverage.voiceNoiseComplaintCount ?? null,
+        voiceNoiseShareOfComplaintsPercent:
+          data.answerCoverage.voiceNoiseShareOfComplaintsPercent ?? null,
+        autoRegisterComplaintCount: data.answerCoverage.autoRegisterComplaintCount ?? null,
+        autoRegisterComplaintCoveragePercent:
+          data.answerCoverage.autoRegisterComplaintCoveragePercent ?? null,
       },
       emergingTopics: subjects.slice(0, 5).map((s, idx) => ({
         rank: idx + 1,
@@ -285,29 +306,15 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
         count: s.value,
         growthPercent: null,
       })),
-      insights: [
-        {
-          id: "cov",
-          title: "پوشش پاسخ شهروند پایین است",
-          body:
-            coverage?.value != null
-              ? `حدود ${faNum(coverage.value, 1)}٪ پرونده‌ها پاسخ شهروند دارند. برای نمونه‌های redact‌شده به «پوشش پاسخ تاریخی» بروید — این عدد اعتبار قانونی نیست.`
-              : "پوشش پاسخ در این بازه در دسترس نیست.",
-          severity: "attention",
-        },
-        {
-          id: "vol",
-          title: "تمرکز موضوعی را در کاوش دسته‌بندی ببینید",
-          body: "توزیع Subject/Department در همین صفحه خلاصه است؛ تصمیم تخصیص ظرفیت نیاز به درخت دسته‌بندی و فیلتر بازه دارد.",
-          severity: "opportunity",
-        },
-        {
-          id: "rules",
-          title: "شاخص‌های رسیدگی هنوز نیازمند قاعده کسب‌وکارند",
-          body: "نرخ اتمام و میانگین روز بر FinishTime است؛ تعریف بسته‌شدن تا امضای stakeholder قطعی نیست.",
-          severity: "info",
-        },
-      ],
+      insights: (brief?.insights ?? []).map((i) => ({
+        id: i.id,
+        title: i.title,
+        body: i.body,
+        severity: (i.severity === "attention" || i.severity === "opportunity" || i.severity === "info"
+          ? i.severity
+          : "info") as "attention" | "opportunity" | "info",
+        priority: i.priority,
+      })),
     };
   },
 

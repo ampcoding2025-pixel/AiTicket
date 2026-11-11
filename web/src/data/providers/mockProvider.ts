@@ -22,7 +22,10 @@ import type {
 } from "@/data/providers/types";
 
 export const mockAnalyticsProvider: AnalyticsDataProvider = {
-  async getExecutiveDashboard(_filters?: AnalyticsQueryFilters): Promise<ExecutiveDashboardData> {
+  async getExecutiveDashboard(
+    _filters?: AnalyticsQueryFilters,
+    _opts?: { fresh?: boolean },
+  ): Promise<ExecutiveDashboardData> {
     await new Promise((r) => setTimeout(r, 120));
     return {
       ...mockExecutiveDashboard,

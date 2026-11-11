@@ -54,14 +54,13 @@ function horizontalBarOption(
           },
         })),
         barWidth: opts?.barWidth ?? 12,
-        // Ch.6: show magnitude on the emphasized (max) bar only
         label: {
           show: true,
           position: "right",
           color: slate,
           fontSize: 11,
-          formatter: (p: { value?: number | number[]; dataIndex?: number }) => {
-            const v = Array.isArray(p.value) ? Number(p.value[0]) : Number(p.value);
+          formatter: (p: { value?: unknown }) => {
+            const v = Number(p.value);
             if (!highlightMax || !Number.isFinite(v) || v !== maxValue || maxValue <= 0) {
               return "";
             }
@@ -70,7 +69,7 @@ function horizontalBarOption(
         },
       },
     ],
-  };
+  } as EChartsOption;
 }
 
 function KpiDetailDialog({
@@ -178,24 +177,60 @@ function SectionLabel({
   );
 }
 
+function formatFreshness(generatedAt: string): string {
+  const ms = Date.now() - new Date(generatedAt).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return "تازگی نامشخص";
+  const sec = Math.round(ms / 1000);
+  if (sec < 60) return `${formatFaNumber(sec)} ثانیه پیش`;
+  const min = Math.round(sec / 60);
+  return `${formatFaNumber(min)} دقیقه پیش`;
+}
+
 export function ExecutiveDashboard() {
   const { filters } = useDashboardFilters();
   const [data, setData] = useState<ExecutiveDashboardData | null>(null);
   const [selectedKpi, setSelectedKpi] = useState<string | null>(null);
   const [appendixOpen, setAppendixOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshTick, setRefreshTick] = useState(0);
+  const [nowTick, setNowTick] = useState(0);
+  const freshRef = useRef(false);
 
   useEffect(() => {
     let alive = true;
-    setData(null);
+    setLoading(true);
+    const wantFresh = freshRef.current;
+    freshRef.current = false;
     getAnalyticsProvider()
-      .getExecutiveDashboard(filters)
+      .getExecutiveDashboard(filters, { fresh: wantFresh })
       .then((res) => {
-        if (alive) setData(res);
+        if (alive) {
+          setData(res);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (alive) setLoading(false);
       });
     return () => {
       alive = false;
     };
-  }, [filters.period, filters.subjectClassId]);
+  }, [filters.period, filters.subjectClassId, refreshTick]);
+
+  // Near-real-time: auto re-fetch at cache TTL (default 3 min)
+  useEffect(() => {
+    const ttlMs = (data?.freshnessSeconds ?? 180) * 1000;
+    const id = window.setInterval(() => {
+      freshRef.current = true;
+      setRefreshTick((t) => t + 1);
+    }, ttlMs);
+    return () => window.clearInterval(id);
+  }, [data?.freshnessSeconds]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick((n) => n + 1), 15000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const volumeInsight = useMemo(() => {
     if (!data?.volumeTrend.length) return null;
@@ -323,7 +358,7 @@ export function ExecutiveDashboard() {
     return horizontalBarOption(chartRows, { labelWidth: 120 });
   }, [data]);
 
-  if (!data) {
+  if (!data || (loading && !data)) {
     return (
       <div className="flex h-64 items-center justify-center text-sm text-[var(--muted)]">
         در حال بارگذاری داشبورد برای بازه انتخابی...
@@ -332,71 +367,156 @@ export function ExecutiveDashboard() {
   }
 
   const selected = data.kpis.find((k) => k.id === selectedKpi);
-  const spotlightIds = new Set(["total-requests", "answer-coverage"]);
-  const spotlightKpis = data.kpis.filter((k) => spotlightIds.has(k.id));
-  const otherPrimaryKpis = data.kpis.filter(
-    (k) => k.feasibility === "feasible" && !spotlightIds.has(k.id),
-  );
+  const spotlightIds = [
+    "total-requests",
+    "d1-complaint",
+    "d1-complaint-ex-voice",
+    "d1-guidance",
+  ];
+  const spotlightKpis = spotlightIds
+    .map((id) => data.kpis.find((k) => k.id === id))
+    .filter((k): k is NonNullable<typeof k> => Boolean(k));
+  const decisionSupportIds = new Set([
+    "total-complaints",
+    "complaint-share",
+    "voice-noise-share",
+    "auto-register-deadend",
+  ]);
+  const decisionSupportKpis = data.kpis.filter((k) => decisionSupportIds.has(k.id));
   const secondaryKpis = data.kpis.filter(
-    (k) => k.feasibility === "needs_rules" || k.feasibility === "illustrative",
+    (k) =>
+      k.feasibility === "needs_rules" ||
+      k.feasibility === "illustrative" ||
+      k.id === "answer-coverage" ||
+      k.id === "non-complaint",
   );
   const unavailableKpis = data.kpis.filter((k) => k.feasibility === "unavailable");
-  const coverage = data.answerCoverage.historicalAvailablePercent;
-  const coverageIsException = coverage < 15;
+  const d1c = data.answerCoverage.complaintAvailablePercent ?? null;
+  const d1g = data.answerCoverage.guidanceAvailablePercent ?? null;
+  const d1x = data.answerCoverage.complaintExVoiceAvailablePercent ?? null;
   const attentionInsight = data.insights.find((i) => i.severity === "attention");
   const finished = data.resolutionStatus[0];
   const open = data.resolutionStatus[1];
   const resTotal = (finished?.value ?? 0) + (open?.value ?? 0) || 1;
+  void nowTick;
 
   const hasAppendix =
     secondaryKpis.length > 0 ||
     unavailableKpis.length > 0 ||
-    data.resolutionStatus.length >= 2 ||
-    otherPrimaryKpis.length > 0;
+    data.resolutionStatus.length >= 2;
 
   return (
     <div className="space-y-8">
+      {/* Freshness / near-real-time */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={cn(
+              "inline-flex h-2 w-2 rounded-full",
+              data.meta.source === "didban" ? "bg-teal-600" : "bg-amber-500",
+            )}
+            aria-hidden
+          />
+          <span>
+            {data.meta.source === "didban" ? "زنده از دیده‌بان" : "نمایشی"} · بازه{" "}
+            {data.meta.periodLabel}
+          </span>
+          <span className="text-slate-400">|</span>
+          <span>
+            تازگی: {formatFreshness(data.meta.generatedAt)} · کش سرور ≈{" "}
+            {formatFaNumber(data.freshnessSeconds ?? 180)} ثانیه
+          </span>
+        </div>
+        <button
+          type="button"
+          disabled={loading}
+          className="rounded-md border border-teal-700/30 bg-teal-50 px-3 py-1.5 text-xs font-medium text-teal-900 hover:bg-teal-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+          onClick={() => {
+            freshRef.current = true;
+            setRefreshTick((t) => t + 1);
+          }}
+        >
+          {loading ? "در حال تازه‌سازی…" : "تازه‌سازی فوری"}
+        </button>
+      </div>
+
       {/* 1 — Beginning: situation + Big Idea */}
       <section className="border-r-4 border-amber-500 bg-amber-50/40 py-4 pr-4 pl-1">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-          <span>مخاطب: مدیران ارشد / راهبران تحلیل (موقت)</span>
-          <span>بازه: {data.meta.periodLabel}</span>
+          <span>مخاطب: تصمیم‌گیران عملیاتی / راهبران تحلیل</span>
+          <span>پرسش: کجا پوشش پاسخ را اصلاح کنیم؟</span>
         </div>
-        <p className="mt-2 text-xs text-slate-600">
-          پرسش بازه: وضعیت حجم پرونده و پوشش پاسخ شهروند در دیده‌بان چگونه است؟
-        </p>
         <p className="mt-3 text-xl font-bold leading-8 text-slate-900 md:text-2xl">
           {data.bigIdea ?? "جمع‌بندی بازه هنوز ساخته نشده است."}
         </p>
         {attentionInsight ? (
           <p className="mt-3 text-sm leading-6 text-amber-950">
-            <span className="font-semibold">توجه: </span>
+            <span className="font-semibold">اولویت فوری: </span>
             {attentionInsight.title} — {attentionInsight.body}
           </p>
         ) : null}
         <p className="mt-3 text-[11px] leading-5 text-slate-500">
-          واژه‌ها: «پرونده» = رکورد Cookie در دیده‌بان؛ «طبقه درخواست» = SubjectClass؛ «پوشش
-          پاسخ» = وجود متن پاسخ شهروند (Availability) — نه اعتبار قانونی (Validity).
+          D1c/D1g/D1x = Availability متن ReplyCitizen — نه Validity. SLA و FinishTime در پیوست‌اند تا
+          قاعده امضا شود.
         </p>
       </section>
 
-      {/* 2 — Main results */}
+      {/* 2 — Main decision KPIs */}
       <section>
-        <SectionLabel lead="نتیجهٔ اصلی قبل از جزئیات — برای جزئیات هر شاخص کلیک کنید.">
-          نتیجهٔ اصلی
+        <SectionLabel lead="شاخص‌های تصمیم‌پذیر — شکایت در برابر راهنمایی، نه عدد ترکیبی.">
+          نتیجهٔ اصلی برای تصمیم
         </SectionLabel>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {spotlightKpis.map((kpi) => (
             <KpiCard
               key={kpi.id}
               kpi={kpi}
               emphasis="spotlight"
-              exception={kpi.id === "answer-coverage" && coverageIsException}
+              exception={
+                (kpi.id === "d1-guidance" && (kpi.value ?? 0) < 5) ||
+                (kpi.id === "d1-complaint" && (kpi.value ?? 100) < 40)
+              }
               onOpen={setSelectedKpi}
             />
           ))}
         </div>
+        {(d1c != null || d1g != null || d1x != null) && (
+          <div className="mt-3 rounded-md border border-slate-200 bg-slate-50/80 p-3 text-xs leading-6 text-slate-700">
+            <span className="font-medium text-slate-900">خوانش سریع: </span>
+            پوشش شکایت {d1c != null ? formatFaPercent(d1c) : "—"}
+            {d1x != null ? ` · بدون نویز صوتی ${formatFaPercent(d1x)}` : ""}
+            {d1g != null ? ` · راهنمایی ${formatFaPercent(d1g)}` : ""}. عدد ترکیبی D1 را برای هدف‌گذاری
+            استفاده نکنید.
+          </div>
+        )}
       </section>
+
+      {decisionSupportKpis.length ? (
+        <section>
+          <SectionLabel lead="محرک‌های اقدام — نویز ورودی و بن‌بست مسیریابی.">
+            سیگنال‌های اقدام
+          </SectionLabel>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            {decisionSupportKpis.map((kpi) => (
+              <KpiCard key={kpi.id} kpi={kpi} emphasis="primary" onOpen={setSelectedKpi} />
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            <Link
+              href="/knowledge/answers"
+              className="rounded-md border border-teal-700/30 bg-teal-50 px-3 py-1.5 font-medium text-teal-900 hover:bg-teal-100"
+            >
+              تشخیص پوشش بر اساس بُعد
+            </Link>
+            <Link
+              href="/performance/actions"
+              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-800 hover:bg-slate-50"
+            >
+              ثبت اقدام شاخص
+            </Link>
+          </div>
+        </section>
+      ) : null}
 
       {/* 3 — Evidence: volume */}
       <section>
@@ -430,33 +550,28 @@ export function ExecutiveDashboard() {
             <EChart option={classOption} height={280} />
           </ChartCard>
         </div>
-        {otherPrimaryKpis.length ? (
-          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            {otherPrimaryKpis.map((kpi) => (
-              <KpiCard key={kpi.id} kpi={kpi} emphasis="primary" onOpen={setSelectedKpi} />
-            ))}
-          </div>
-        ) : null}
       </section>
 
-      {/* 4 — Evidence: coverage / topics (single placement; no duplicate hero) */}
+      {/* 4 — Evidence: coverage / topics */}
       <section>
-        <SectionLabel lead="شواهد استثناء پوشش پاسخ و تمرکز موضوعی — بدون ادعای علّت.">
-          شواهد پوشش و موضوعات
+        <SectionLabel lead="شواهد تمرکز موضوعی و کانال — بدون ادعای علّت.">
+          شواهد موضوعات و کانال
         </SectionLabel>
         <div className="mb-4 rounded-md border border-slate-200 bg-slate-50/80 p-3 text-xs leading-6 text-slate-700">
           <p className="font-medium text-slate-900">چه چیزی در داده هست / نیست</p>
           <ul className="mt-2 list-disc space-y-1 pr-5">
             <li>
-              هست: درصد پرونده‌هایی که متن پاسخ شهروند دارند (
-              {formatFaPercent(coverage)}
-              ) — معیار Availability.
+              هست: D1c/D1g/D1x و شمار نویز صوتی / ثبت خودکار از ReplyCitizen + SubjectClass.
             </li>
-            <li>نیست: علت پایین بودن پوشش، و اعتبار قانونی پاسخ (Validity) در دیده‌بان.</li>
+            <li>نیست: Validity حقوقی، SLA، و علت ریشه‌ای بدون تحقیق میدانی.</li>
             <li>
-              گام بعد: نمونه‌های redact‌شده در{" "}
+              گام بعد:{" "}
               <Link className="underline underline-offset-2" href="/knowledge/answers">
                 پوشش پاسخ تاریخی
+              </Link>{" "}
+              و{" "}
+              <Link className="underline underline-offset-2" href="/performance/actions">
+                ثبت اقدام
               </Link>
               .
             </li>
@@ -519,6 +634,7 @@ export function ExecutiveDashboard() {
                         isAttention ? "text-amber-800" : "font-normal text-slate-400",
                       )}
                     >
+                      {insight.priority ? `${insight.priority} · ` : ""}
                       {isAttention ? "توجه" : insight.severity === "opportunity" ? "فرصت" : "اطلاع"}
                     </span>
                   </div>
@@ -532,7 +648,14 @@ export function ExecutiveDashboard() {
           <p className="text-xs font-semibold text-slate-700">پرسش‌ها / گام‌های بعدی</p>
           <ol className="mt-2 list-decimal space-y-2 pr-5 text-xs text-slate-700">
             <li>
-              نمونه‌های پاسخ شهروند را در{" "}
+              نویز صوتی و ثبت خودکار را در اقدام ثبت کنید —{" "}
+              <Link className="font-medium underline underline-offset-2" href="/performance/actions">
+                ثبت اقدام شاخص
+              </Link>
+              .
+            </li>
+            <li>
+              پوشش بعدی را در{" "}
               <Link className="font-medium underline underline-offset-2" href="/knowledge/answers">
                 پوشش پاسخ تاریخی
               </Link>{" "}
@@ -544,13 +667,6 @@ export function ExecutiveDashboard() {
                 کاوش دسته‌بندی
               </Link>{" "}
               عمیق‌تر کنید.
-            </li>
-            <li>
-              تعریف و امکان‌سنجی شاخص‌ها را در{" "}
-              <Link className="font-medium underline underline-offset-2" href="/performance/kpi">
-                پایش شاخص‌ها
-              </Link>{" "}
-              مرور کنید.
             </li>
           </ol>
         </div>
