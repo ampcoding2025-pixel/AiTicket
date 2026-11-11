@@ -1,6 +1,8 @@
-# AiTicket — Social Security Intelligent Analytics Platform
+# AiTicket — Intelligent Complaint & Request Analytics Platform
 
-پلتفرم تحلیلی و هوش سازمانی برای تحلیل تاریخی درخواست‌ها و شکایات (منبع داده: دیده‌بان) با مسیر تکاملی به سمت مدیریت هوشمند شکایت.
+پلتفرم تحلیلی برای تبدیل دادهٔ تاریخی **دیده‌بان** به هوش سازمانی قابل اقدام، با مسیر تکاملی به سمت دستیار هوشمند رسیدگی (انسان در حلقه).
+
+> **Verified source (2026-11-11):** `DidehbanDb` on SQL Server is operationally a **Behzisti** case system (`Cookie` + taxonomy). Reconcile product naming with stakeholders — see `docs/08-didban-inspection-notes.md`.
 
 ## Approach
 
@@ -9,7 +11,7 @@
 ## Repository Layout
 
 ```
-docs/     Product, IA, KPI, architecture notes
+docs/     Product, IA, KPI mapping, Didban notes, roadmap, AI toolkit
 web/      Next.js frontend (Phase 2)
 ```
 
@@ -31,6 +33,26 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Status
 
-- Phase 1 docs: started
-- Phase 2 Executive Dashboard with Mock Data: in progress
-- Didban schema discovery: blocked until host/engine details are provided
+| Track | Status |
+|-------|--------|
+| Phase 1 docs | In place; KPI + Didban notes refreshed from live DB |
+| Phase 2 Executive Dashboard (Mock) | Behzisti-shaped Mock complete |
+| Phase 2 Request Analytics (Mock) | Done (`/analytics/requests`) |
+| Phase 2 Category Explorer (Mock) | Done (`/analytics/categories`) |
+| Phase 2 Topic & Cluster Explorer (Mock) | Done (`/analytics/topics`) |
+| Phase 2 Historical Answer Intelligence (Mock) | Done (`/knowledge/coverage`) |
+| Phase 2 KPI Monitoring (Mock) | Done (`/performance/kpi`) |
+| Phase 2 Reports & Export (Mock) | Done (`/reports/standard`, `/reports/export`) |
+| Phase 2 AI Performance shell (Mock) | Done (`/ai/performance`) |
+| Phase 2 Admin shells (Mock) | Done (`/admin/*`) |
+| **Phase 2 Presentation Layer** | **Complete (Mock, Behzisti-shaped)** |
+| Didban schema discovery | **Done (read-only)** — see `docs/08` |
+| KPI feasibility mapping | **Done (first pass)** — see `docs/04` |
+| Prioritized roadmap | `docs/09-prioritized-roadmap.md` |
+| Analytics / AI toolkit | `docs/10-analytics-ai-toolkit.md` |
+
+## Next Step (Agreed Priority)
+
+**P1 — Continue Outside-In frontend** with Behzisti-shaped mock dimensions and honest Unavailable KPI badges, while collecting stakeholder answers for closed-status / SLA semantics (P0 leftovers).
+
+Do **not** start production AI automation or write to Didban.

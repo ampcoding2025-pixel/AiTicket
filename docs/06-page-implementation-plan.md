@@ -59,8 +59,15 @@ Users/roles, data sources, integration monitoring, audit logs, settings — stru
 ## Delivery Order
 
 1. App shell + design tokens + mock provider
-2. Executive Dashboard
-3. Analytics pages
-4. Knowledge pages
-5. KPI center + reports
-6. AI + admin shells
+2. Executive Dashboard — **done (Mock, Behzisti-shaped 2026-11-11)**
+3. Analytics pages — Request + Category + Topic/Cluster Explorer **Mock**
+4. Knowledge pages — Historical Answer Intelligence **Mock**
+5. KPI center **Mock** + Reports/Export **Mock**
+6. AI Performance shell **Mock** + Admin shells **Mock** (users/sources/integration/audit/settings)
+
+## 2026-11-11 alignment notes
+
+- Mock taxonomy switched from Healthcare/Insurance to Didban SubjectClass / SubjectGroup
+- Answer coverage mock reflects ~6.3% ReplyCitizen availability; validity marked unavailable
+- SLA KPI marked unavailable (empty deadline fields)
+- Branding softened to «سازمانی / دیده‌بان» pending stakeholder naming decision

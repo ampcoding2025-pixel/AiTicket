@@ -1,50 +1,50 @@
 # Missing Requirements, Assumptions, Risks & Open Questions
 
-## Blockers for Didban Inspection (Current)
+## Access Status (Updated 2026-11-11)
 
-Credentials provided (username only referenced in ops notes — **never commit secrets**).
-
-Still required before any read-only schema discovery:
-
-1. **Host / IP** (and whether VPN or internal network is required)
-2. **Port**
-3. **Database engine** (SQL Server / Oracle / PostgreSQL / MySQL / other)
-4. **Database / schema name**
-5. **Read-only confirmation** and allowed object types (tables/views only)
-6. **Connection method** (direct TCP, SSH tunnel, jump host, ODBC DSN)
-
-Until these are provided, Didban design inspection cannot proceed. No CRUD will be performed when access is granted—only metadata and SELECT profiling as approved.
+| Item | Status |
+|------|--------|
+| SQL Server host | Verified `10.1.0.156` |
+| Engine | Verified SQL Server 2016 Enterprise |
+| Database | Verified `DidehbanDb` |
+| Read SELECT | Works (TrustServerCertificate) |
+| `DidehbanAttachment` | **Denied** for current login |
+| Secrets in Git | Forbidden — rotate chat-shared password |
 
 ## Assumptions (Explicit)
 
 - First release is **historical analytics**, not live ticket operations.
 - Mock data in the UI is **synthetic** and labeled as demo until integration.
-- Organizational taxonomy examples (Healthcare/Insurance) are **illustrative**, not final.
+- Live taxonomy is **Behzisti** (`SubjectClass` / `SubjectNature` / `SubjectGroup` / `Subject`) — not Healthcare/Insurance examples from the brief.
 - Persian is the default UI language; Gregorian + Jalali dates may both be needed.
 - Preferred stack: Next.js frontend + ASP.NET Core modular monolith later.
+- LLM assistants may help analysis offline; they are **not** authoritative answer engines in M1.
 
-## Unresolved Product Questions
+## Unresolved Product Questions (Prioritized)
 
-1. Exact definition of “complaint” vs “request” in Didban fields?
-2. Which organizational unit hierarchy is authoritative?
-3. Is location/branch data available for geographic charts?
-4. Are historical answers stored as structured fields or free text?
-5. Are circulars/regulations available as linkable documents?
-6. Who owns KPI definition sign-off (business vs IT)?
-7. What PII fields must never appear in aggregate dashboards?
-8. What is the acceptance threshold for the “~70% historical answer” validation study?
+1. Confirm product branding: Social Security framing vs **Behzisti Didban** operational reality?
+2. Exact closed-status set for “Resolved” (candidates include 37, 38, 15, 19, 6, …)?
+3. Business meaning of `CookieFlowDelayTime` and `CookieFlowDiscontentCount`?
+4. Who signs off KPI dictionary (business vs IT)?
+5. Is location for charts province (`Inform.RegionId`) sufficient, or branch-level required?
+6. Should “historical answer” mean `CookieFlowReplyCitizen` only, or also operator `CookieFlowDesc`?
+7. Where do circulars/regulations live if not in Didban?
+8. What PII masking rules apply for expert drill-down?
+9. Acceptance method to replace the “~70% historical answer” claim with a measured study?
+10. Can read-only access to `DidehbanAttachment` be granted?
 
 ## Risks
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Schema unknown / undocumented | Integration delay | Read-only discovery phase before KPI wiring |
-| Treating similarity as validity | Wrong operational decisions | Validity/version/expert-status model |
-| Over-promising AI automation | Stakeholder distrust | Clear M1 vs M2 labeling in UI |
-| PII leakage in charts/tables | Compliance failure | Aggregation + RBAC + minimization |
-| KPI invented from available columns | Misleading metrics | KPI dictionary first; mark unavailable when fields missing |
-| Secrets in repo / chat reuse | Security incident | `.env` local only; rotate if exposed |
+| Wrong domain narrative (SSO vs Behzisti) | Stakeholder distrust | Documented in `08`/`09`; confirm naming |
+| Treating similarity / operator notes as valid answers | Wrong decisions | Availability vs validity split; D3 unavailable |
+| Promoting unverified 70% claim | Misleading exec KPIs | Measured D1 ≈ 6.3% citizen reply; study in P4 |
+| Empty SLA deadlines shown as compliance | Fake performance | Mark C3 Unavailable |
+| PII in text/replies | Compliance failure | Aggregation + RBAC + scrubbing before NLP |
+| Premature LLM auto-replies | Legal/operational harm | M2 HITL only |
+| Secrets in chat/repo | Security incident | Local env only; rotate password |
 
 ## Security Note
 
-Database credentials shared in chat should be treated as **potentially exposed**. Prefer rotating the password after this engagement and storing secrets only in a secure local/secret manager—not in Git.
+Database credentials shared in chat should be treated as **potentially exposed**. Prefer rotating the password and storing secrets only in a secure local/secret manager—not in Git.
