@@ -21,7 +21,7 @@ Never commit real connection strings. Use `appsettings.Development.example.json`
 
 | Method | Path | Notes |
 |--------|------|-------|
-| GET | `/api/v1/analytics/executive` | Live Didban aggregates (cached ~3m) |
+| GET | `/api/v1/analytics/executive` | Live Didban aggregates + monthly volumeTrend (cached ~3m) |
 | GET | `/api/v1/analytics/requests` | Class/channel/region/group |
 | GET | `/api/v1/analytics/categories/tree` | Zone→Nature→Group→Subject tree |
 | GET | `/api/v1/knowledge/answers/summary` | Reply coverage + redacted cases |

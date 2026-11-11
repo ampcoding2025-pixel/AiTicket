@@ -79,7 +79,7 @@ Deliverables:
 
 **First live KPI set (API):** A1, A2, A3, B1/B2/B3 (needs_rules), D1, C3 unavailable.
 
-**Exit:** Executive Dashboard can run on `DATA_PROVIDER=api` against Didban aggregates. **P3 core complete** — remaining polish: volume trend endpoint, KPI dictionary live values, topics NLP.
+**Exit:** Executive Dashboard can run on `DATA_PROVIDER=api` against Didban aggregates. **P3 core complete** — polish: volume trend live; remaining: KPI dictionary page live values, topics NLP.
 
 ---
 
@@ -112,7 +112,7 @@ Deliverables:
 
 **P1–P3 core complete.** API serves executive/requests/categories/answers/KPIs with cache; web can use `NEXT_PUBLIC_DATA_PROVIDER=api`.
 
-**Next:** stakeholder sign-off on eligibility/resolved rules; then P3 polish (volume trend, live KPI dictionary) or start P4 offline NLP.
+**Next:** stakeholder sign-off on eligibility/resolved rules; then live KPI dictionary values on monitoring page, or start P4 offline NLP.
 
 We will **not** yet: train production classifiers, call ChatGPT on citizen text at scale, or write to Didban.
 

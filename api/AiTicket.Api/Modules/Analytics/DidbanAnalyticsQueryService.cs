@@ -105,6 +105,25 @@ public sealed partial class DidbanAnalyticsQueryService(
                 dp,
                 cancellationToken: ct));
 
+        var volumeTrendRows = (await connection.QueryAsync<VolumeTrendRow>(
+            new CommandDefinition(
+                $"""
+                SELECT
+                  CONCAT(
+                    CAST(YEAR(c.CookieTime) AS nvarchar(4)),
+                    N'/',
+                    RIGHT(CONCAT(N'0', CAST(MONTH(c.CookieTime) AS nvarchar(2))), 2)
+                  ) AS Label,
+                  COUNT_BIG(*) AS Requests,
+                  SUM(CASE WHEN c.SubjectClassId = 1 THEN 1 ELSE 0 END) AS Complaints
+                FROM dbo.Cookie c
+                {whereSql}
+                GROUP BY YEAR(c.CookieTime), MONTH(c.CookieTime)
+                ORDER BY YEAR(c.CookieTime), MONTH(c.CookieTime)
+                """,
+                dp,
+                cancellationToken: ct))).ToList();
+
         var total = volume.Total;
         var resolutionRate = total == 0 ? 0 : Math.Round(100.0 * volume.Finished / total, 1);
         var availablePercent = replyCoverage.Eligible == 0
@@ -131,10 +150,15 @@ public sealed partial class DidbanAnalyticsQueryService(
 
         logger.LogInformation("Executive aggregates computed. Total={Total} RuleSet={RuleSet}", total, _analytics.RuleSetVersion);
 
+        var volumeTrend = volumeTrendRows
+            .Select(r => new VolumeTrendPointDto(r.Label ?? "", r.Requests, r.Complaints))
+            .ToList();
+
         return new ExecutiveDashboardResponse(
             new MetaDto("didban", DateTimeOffset.UtcNow, SqlFilterBuilder.PeriodLabel(filter)),
             _analytics.RuleSetVersion,
             kpis,
+            volumeTrend,
             classDist,
             channelDist,
             topSubjects,
@@ -305,5 +329,12 @@ public sealed partial class DidbanAnalyticsQueryService(
     {
         public long Eligible { get; init; }
         public long WithReply { get; init; }
+    }
+
+    private sealed class VolumeTrendRow
+    {
+        public string? Label { get; init; }
+        public long Requests { get; init; }
+        public long Complaints { get; init; }
     }
 }

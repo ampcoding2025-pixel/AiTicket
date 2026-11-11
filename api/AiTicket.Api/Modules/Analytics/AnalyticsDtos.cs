@@ -6,11 +6,14 @@ public sealed record ExecutiveDashboardResponse(
     MetaDto Meta,
     string RuleSetVersion,
     IReadOnlyList<KpiCardDto> Kpis,
+    IReadOnlyList<VolumeTrendPointDto> VolumeTrend,
     IReadOnlyList<NamedValueDto> ClassDistribution,
     IReadOnlyList<NamedValueDto> ChannelDistribution,
     IReadOnlyList<NamedValueDto> TopSubjects,
     IReadOnlyList<NamedValueDto> TopDepartments,
     AnswerCoverageDto AnswerCoverage);
+
+public sealed record VolumeTrendPointDto(string Label, long Requests, long Complaints);
 
 public sealed record AnswerCoverageDto(
     double HistoricalAvailablePercent,

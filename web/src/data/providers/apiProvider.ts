@@ -36,10 +36,13 @@ type ApiMeta = {
 
 type ApiNamed = { name: string; value: number };
 
+type ApiVolumePoint = { label: string; requests: number; complaints: number };
+
 type ApiExecutive = {
   meta: ApiMeta;
   ruleSetVersion: string;
   kpis: ApiKpi[];
+  volumeTrend?: ApiVolumePoint[] | null;
   classDistribution: ApiNamed[];
   channelDistribution: ApiNamed[];
   topSubjects: ApiNamed[];
@@ -180,11 +183,20 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
         domainNote: "موجودیت Cookie · SubjectClass/Subject/Department — فقط‌خواندنی",
       },
       kpis: data.kpis.map(mapKpi),
-      volumeTrend: [],
+      volumeTrend: (data.volumeTrend ?? []).map((p) => ({
+        label: p.label,
+        requests: Number(p.requests),
+        complaints: Number(p.complaints),
+      })),
       categoryDistribution: subjects.slice(0, 7),
       classDistribution: mapNamed(data.classDistribution),
       orgUnitPerformance: mapNamed(data.topDepartments),
-      resolutionStatus: [],
+      resolutionStatus: data.kpis
+        .filter((k) => k.id === "resolved" || k.id === "unresolved")
+        .map((k) => ({
+          name: k.label,
+          value: Number(k.value ?? 0),
+        })),
       channelDistribution: mapNamed(data.channelDistribution),
       answerCoverage: {
         historicalAvailablePercent: data.answerCoverage.historicalAvailablePercent,

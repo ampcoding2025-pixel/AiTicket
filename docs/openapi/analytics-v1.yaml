@@ -335,6 +335,21 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/KpiCard'
+        volumeTrend:
+          type: array
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+                description: Gregorian year/month (yyyy/MM) from CookieTime
+              requests:
+                type: integer
+                format: int64
+              complaints:
+                type: integer
+                format: int64
+            required: [label, requests, complaints]
     RequestAnalyticsResponse:
       type: object
       properties:
