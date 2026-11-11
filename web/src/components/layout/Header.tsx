@@ -3,12 +3,16 @@
 import { usePathname } from "next/navigation";
 import { CalendarRange, Building2, Filter, Download, RotateCcw } from "lucide-react";
 import { useDashboardFilters } from "@/data/DashboardFilterContext";
-import {
-  periodToRange,
-  SUBJECT_CLASS_OPTIONS,
-  type PeriodKey,
-} from "@/data/filters";
+import { SUBJECT_CLASS_OPTIONS, type PeriodKey } from "@/data/filters";
 import { cn } from "@/lib/utils";
+
+/** Static labels for chips — avoid `periodToRange()` (uses `new Date`) during render/prerender */
+const PERIOD_CHIP_LABELS: Record<PeriodKey, string> = {
+  all: "کل دوره تاریخی",
+  "30d": "۳۰ روز اخیر",
+  "90d": "۹۰ روز اخیر",
+  ytd: "از ابتدای سال",
+};
 
 const titles: Record<string, { title: string; subtitle: string }> = {
   "/": {
@@ -83,7 +87,7 @@ export function Header() {
 
   const classOption =
     SUBJECT_CLASS_OPTIONS.find((o) => o.id === filters.subjectClassId) ?? SUBJECT_CLASS_OPTIONS[0];
-  const periodLabel = periodToRange(filters.period).label;
+  const periodLabel = PERIOD_CHIP_LABELS[filters.period];
 
   return (
     <header className="border-b border-[var(--border)] bg-white/90 px-5 py-4 backdrop-blur">
