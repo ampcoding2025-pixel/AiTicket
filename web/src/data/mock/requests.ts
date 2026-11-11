@@ -1,0 +1,108 @@
+import type { RequestAnalyticsData } from "@/data/providers/types";
+
+/** Mock Request & Complaint analytics shaped by Behzisti Didban dimensions. */
+export const mockRequestAnalytics: RequestAnalyticsData = {
+  meta: {
+    source: "mock",
+    label: "تحلیل درخواست/شکایت — نمایشی با ابعاد SubjectClass و کانال دیده‌بان",
+    periodLabel: "۱۴۰۴/۰۷/۰۱ تا ۱۴۰۴/۰۸/۲۰",
+  },
+  summary: [
+    {
+      id: "period-total",
+      label: "حجم دوره",
+      value: 12480,
+      unit: "count",
+      deltaPercent: -1.9,
+      feasibility: "illustrative",
+    },
+    {
+      id: "period-complaints",
+      label: "شکایت در دوره",
+      value: 3010,
+      unit: "count",
+      deltaPercent: 2.4,
+      tone: "warning",
+      feasibility: "illustrative",
+    },
+    {
+      id: "complaint-share",
+      label: "سهم شکایت",
+      value: 24.1,
+      unit: "percent",
+      deltaPercent: 0.8,
+      feasibility: "illustrative",
+    },
+    {
+      id: "guidance-share",
+      label: "سهم راهنمایی",
+      value: 68.4,
+      unit: "percent",
+      deltaPercent: -0.5,
+      tone: "positive",
+      feasibility: "illustrative",
+    },
+  ],
+  byClass: [
+    { name: "راهنمایی و ارشاد", value: 8540 },
+    { name: "شکایت", value: 3010 },
+    { name: "گزارش", value: 720 },
+    { name: "پیشنهاد", value: 210 },
+  ],
+  bySubjectGroup: [
+    { name: "مستمری توانبخشی", value: 2180 },
+    { name: "مالی (توانبخشی)", value: 1760 },
+    { name: "تماس‌ها (صوتی/اینترنت/اپ)", value: 1540 },
+    { name: "کمک معیشتی و موردی", value: 1320 },
+    { name: "عملکرد پرسنل", value: 980 },
+    { name: "راهنمایی و ارشاد", value: 870 },
+    { name: "کمیسیون پزشکی / شدت معلولیت", value: 640 },
+    { name: "سایر گروه‌ها", value: 3190 },
+  ],
+  byChannel: [
+    { name: "مرکز پیام", value: 10120 },
+    { name: "صندوق صوتی", value: 1120 },
+    { name: "اینترنت", value: 890 },
+    { name: "موبایل شهروندی", value: 210 },
+    { name: "سایر", value: 140 },
+  ],
+  byRegion: [
+    { name: "تهران", value: 2140 },
+    { name: "اصفهان", value: 980 },
+    { name: "خراسان رضوی", value: 910 },
+    { name: "فارس", value: 780 },
+    { name: "خوزستان", value: 720 },
+    { name: "آذربایجان شرقی", value: 610 },
+    { name: "سایر استان‌ها", value: 6340 },
+  ],
+  periodComparison: [
+    { label: "کل پرونده", current: 12480, previous: 12720 },
+    { label: "شکایت", current: 3010, previous: 2940 },
+    { label: "راهنمایی", current: 8540, previous: 8720 },
+    { label: "گزارش", current: 720, previous: 690 },
+    { label: "پیشنهاد", current: 210, previous: 370 },
+  ],
+  repeatedCandidates: [
+    {
+      id: "r1",
+      subject: "افزایش مبلغ مستمری توانبخشی",
+      count: 86,
+      method: "proxy — SubjectId + پنجره ۳۰ روزه",
+      note: "لینک ReferringCookieId کافی نیست؛ شباهت متنی بعداً",
+    },
+    {
+      id: "r2",
+      subject: "حق پرستاری معلولیت شدید",
+      count: 64,
+      method: "proxy — SubjectId + پنجره ۳۰ روزه",
+      note: "نیازمند تأیید کسب‌وکار برای تعریف «تکراری»",
+    },
+    {
+      id: "r3",
+      subject: "کمک موردی توانبخشی",
+      count: 51,
+      method: "proxy — SubjectId + پنجره ۳۰ روزه",
+      note: "ممکن است پیگیری مشروع همان پرونده باشد",
+    },
+  ],
+};

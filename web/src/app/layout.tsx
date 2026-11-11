@@ -10,9 +10,9 @@ const vazirmatn = Vazirmatn({
 });
 
 export const metadata: Metadata = {
-  title: "پلتفرم هوش تحلیلی تأمین اجتماعی",
+  title: "پلتفرم هوش تحلیلی سازمانی",
   description:
-    "داشبورد سازمانی تحلیل درخواست‌ها و شکایات — Outside-In / Mock Data",
+    "داشبورد سازمانی تحلیل پرونده‌ها و شکایات دیده‌بان — Outside-In / Mock Data",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

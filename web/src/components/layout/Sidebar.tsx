@@ -30,10 +30,10 @@ export function Sidebar() {
         <h1 className="mt-1 text-lg font-bold leading-7 text-[var(--brand)]">
           پلتفرم هوش تحلیلی
           <br />
-          تأمین اجتماعی
+          سازمانی
         </h1>
         <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
-          نسخه اولیه — Outside-In / Mock Data
+          دیده‌بان · Outside-In / Mock — ابعاد بهزیستی
         </p>
       </div>
 
