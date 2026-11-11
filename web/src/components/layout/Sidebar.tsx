@@ -24,31 +24,15 @@ export function Sidebar() {
 
   return (
     <aside className="flex h-full w-72 shrink-0 flex-col border-l border-[var(--border)] bg-[var(--sidebar)] text-[var(--sidebar-fg)]">
-      <div className="border-b border-[var(--border)] px-5 py-5">
-        <div className="flex items-center gap-3">
-          <Image
-            src="/behzisti-logo.png"
-            alt="لوگوی سازمان بهزیستی کشور"
-            width={56}
-            height={56}
-            priority
-            className="h-14 w-14 object-contain"
-          />
-          <div className="min-w-0">
-            <div className="text-[11px] font-semibold leading-5 text-[var(--brand)]">
-              سازمان بهزیستی کشور
-            </div>
-            <div className="text-[10px] tracking-wide text-[var(--muted)]">
-              BEHZISTI.IR
-            </div>
-          </div>
-        </div>
-        <h1 className="mt-4 text-lg font-bold leading-7 text-slate-900">
-          پلتفرم هوش تحلیلی
-        </h1>
-        <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
-          دیده‌بان · Outside-In · تحلیل پرونده و شکایت
-        </p>
+      <div className="flex items-center justify-center border-b border-[var(--border)] px-5 py-5">
+        <Image
+          src="/behzisti-logo.png"
+          alt="لوگوی سازمان بهزیستی کشور"
+          width={72}
+          height={72}
+          priority
+          className="h-[72px] w-[72px] object-contain"
+        />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">

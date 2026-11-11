@@ -91,16 +91,15 @@ public sealed partial class DidbanAnalyticsQueryService(
             new CommandDefinition(
                 $"""
                 SELECT
-                  COUNT_BIG(DISTINCT c.CookieId) AS Eligible,
-                  COUNT_BIG(DISTINCT CASE
-                    WHEN EXISTS (
-                      SELECT 1
-                      FROM dbo.CookieFlow f
-                      WHERE f.CookieId = c.CookieId
-                        AND f.CookieFlowReplyCitizen IS NOT NULL
-                        AND LEN(LTRIM(RTRIM(f.CookieFlowReplyCitizen))) > 0
-                    ) THEN c.CookieId END) AS WithReply
+                  COUNT_BIG(*) AS Eligible,
+                  COUNT_BIG(replied.CookieId) AS WithReply
                 FROM dbo.Cookie c
+                LEFT JOIN (
+                  SELECT DISTINCT f.CookieId
+                  FROM dbo.CookieFlow f
+                  WHERE f.CookieFlowReplyCitizen IS NOT NULL
+                    AND LEN(LTRIM(RTRIM(f.CookieFlowReplyCitizen))) > 0
+                ) replied ON replied.CookieId = c.CookieId
                 {whereSql}
                 """,
                 dp,

@@ -169,13 +169,14 @@ public sealed class DidbanKnowledgeQueryService(
                 $"""
                 SELECT
                   COUNT_BIG(*) AS Eligible,
-                  COUNT_BIG(DISTINCT CASE WHEN EXISTS (
-                      SELECT 1 FROM dbo.CookieFlow f
-                      WHERE f.CookieId = c.CookieId
-                        AND f.CookieFlowReplyCitizen IS NOT NULL
-                        AND LEN(LTRIM(RTRIM(f.CookieFlowReplyCitizen))) > 0
-                    ) THEN c.CookieId END) AS WithReply
+                  COUNT_BIG(replied.CookieId) AS WithReply
                 FROM dbo.Cookie c
+                LEFT JOIN (
+                  SELECT DISTINCT f.CookieId
+                  FROM dbo.CookieFlow f
+                  WHERE f.CookieFlowReplyCitizen IS NOT NULL
+                    AND LEN(LTRIM(RTRIM(f.CookieFlowReplyCitizen))) > 0
+                ) replied ON replied.CookieId = c.CookieId
                 {whereSql}
                 """,
                 dp,
@@ -191,14 +192,15 @@ public sealed class DidbanKnowledgeQueryService(
                 $"""
                 SELECT
                   CAST(YEAR(c.CookieTime) AS nvarchar(8)) AS Label,
-                  CASE WHEN COUNT_BIG(*) = 0 THEN 0
-                       ELSE ROUND(100.0 * COUNT_BIG(DISTINCT CASE WHEN EXISTS (
-                            SELECT 1 FROM dbo.CookieFlow f
-                            WHERE f.CookieId = c.CookieId
-                              AND f.CookieFlowReplyCitizen IS NOT NULL
-                              AND LEN(LTRIM(RTRIM(f.CookieFlowReplyCitizen))) > 0
-                         ) THEN c.CookieId END) / COUNT_BIG(*), 1) END AS AvailablePercent
+                  CASE WHEN COUNT_BIG(*) = 0 THEN CAST(0 AS float)
+                       ELSE CAST(ROUND(100.0 * COUNT_BIG(replied.CookieId) / COUNT_BIG(*), 1) AS float) END AS AvailablePercent
                 FROM dbo.Cookie c
+                LEFT JOIN (
+                  SELECT DISTINCT f.CookieId
+                  FROM dbo.CookieFlow f
+                  WHERE f.CookieFlowReplyCitizen IS NOT NULL
+                    AND LEN(LTRIM(RTRIM(f.CookieFlowReplyCitizen))) > 0
+                ) replied ON replied.CookieId = c.CookieId
                 {whereSql}
                 GROUP BY YEAR(c.CookieTime)
                 ORDER BY YEAR(c.CookieTime)

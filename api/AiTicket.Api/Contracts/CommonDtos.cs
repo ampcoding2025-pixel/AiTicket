@@ -25,7 +25,8 @@ public sealed record KpiCardDto(
     string? Hint,
     string Feasibility);
 
-public sealed record NamedValueDto(string Name, double Value);
+// long matches SQL COUNT_BIG for Dapper materialization
+public sealed record NamedValueDto(string Name, long Value);
 
 public sealed record ProblemDto(
     string Type,
