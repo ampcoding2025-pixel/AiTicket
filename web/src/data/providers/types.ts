@@ -183,6 +183,14 @@ export type HistoricalAnswerCase = {
   validityNote: string;
 };
 
+export type CoverageDimensionRow = {
+  id: string;
+  name: string;
+  eligible: number;
+  withReply: number;
+  coveragePercent: number;
+};
+
 export type AnswerIntelligenceData = {
   meta: {
     source: DataSourceKind;
@@ -208,6 +216,9 @@ export type AnswerIntelligenceData = {
     validity: AnswerValidityStatus;
   }[];
   cases: HistoricalAnswerCase[];
+  /** Top volume dimensions with Availability % — for diagnosis / action */
+  coverageByDepartment: CoverageDimensionRow[];
+  coverageBySubject: CoverageDimensionRow[];
 };
 
 export type KpiGroup = "volume" | "resolution" | "operational" | "knowledge" | "ai" | "cx";

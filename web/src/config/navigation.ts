@@ -44,6 +44,7 @@ export const navigation: NavGroup[] = [
     label: "عملکرد",
     items: [
       { id: "kpi", label: "پایش شاخص‌ها", href: "/performance/kpi", maturity: "active" },
+      { id: "kpi-actions", label: "ثبت اقدام شاخص", href: "/performance/actions", maturity: "active" },
       { id: "sla", label: "SLA و زمان پاسخ", href: "/performance/sla", maturity: "planned" },
       { id: "org-perf", label: "عملکرد واحد سازمانی", href: "/performance/units", maturity: "planned" },
       { id: "workload", label: "توزیع بار کاری", href: "/performance/workload", maturity: "planned" },

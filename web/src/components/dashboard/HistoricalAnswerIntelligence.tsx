@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
 import { ChartCard } from "@/components/dashboard/ChartCard";
@@ -11,10 +12,76 @@ import { useDashboardFilters } from "@/data/DashboardFilterContext";
 import type {
   AnswerIntelligenceData,
   AnswerValidityStatus,
+  CoverageDimensionRow,
   HistoricalAnswerCase,
 } from "@/data/providers/types";
 import { cn, formatFaNumber, formatFaPercent } from "@/lib/utils";
-import { BookOpenCheck, ShieldAlert } from "lucide-react";
+import { BookOpenCheck, ClipboardList, ShieldAlert } from "lucide-react";
+
+/** Coverage % bars — high volume of weak Availability rises to the top of the category axis. */
+function coveragePercentBarOption(rows: CoverageDimensionRow[]): EChartsOption {
+  const sorted = [...rows].sort((a, b) => b.coveragePercent - a.coveragePercent);
+  const minPct = sorted.length ? Math.min(...sorted.map((r) => r.coveragePercent)) : 0;
+  const slate = "#64748b";
+  const amber = "#d97706";
+  const brand = "#0f766e";
+  return {
+    textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      formatter: (params: unknown) => {
+        const p = Array.isArray(params) ? params[0] : params;
+        const idx = (p as { dataIndex?: number })?.dataIndex ?? 0;
+        const row = sorted[idx];
+        if (!row) return "";
+        return `${row.name}<br/>پوشش: ${formatFaPercent(row.coveragePercent)}<br/>مشمول: ${formatFaNumber(row.eligible)} · با پاسخ: ${formatFaNumber(row.withReply)}`;
+      },
+    },
+    grid: { left: 150, right: 52, top: 8, bottom: 20 },
+    xAxis: {
+      type: "value",
+      max: 100,
+      axisLabel: { color: slate, formatter: "{value}%" },
+      splitLine: { lineStyle: { color: "#eef2f7" } },
+    },
+    yAxis: {
+      type: "category",
+      data: sorted.map((r) => r.name),
+      axisLabel: { color: slate, width: 140, overflow: "truncate" },
+      axisTick: { show: false },
+    },
+    series: [
+      {
+        type: "bar",
+        barWidth: 12,
+        data: sorted.map((r) => ({
+          value: r.coveragePercent,
+          itemStyle: {
+            color: r.coveragePercent === minPct && rows.length > 1 ? amber : brand,
+          },
+        })),
+        label: {
+          show: true,
+          position: "right",
+          color: slate,
+          fontSize: 11,
+          formatter: (p: { value?: unknown }) => formatFaPercent(Number(p.value)),
+        },
+      },
+    ],
+  } as EChartsOption;
+}
+
+function topGapFinding(rows: CoverageDimensionRow[], dimLabel: string): string | null {
+  if (!rows.length) return null;
+  const worst = [...rows].sort((a, b) => {
+    if (a.coveragePercent !== b.coveragePercent) return a.coveragePercent - b.coveragePercent;
+    return b.eligible - a.eligible;
+  })[0];
+  if (!worst) return null;
+  return `پوشش پاسخ شهروند در ${dimLabel} «${worst.name}» حدود ${formatFaPercent(worst.coveragePercent)} است (مشمول ${formatFaNumber(worst.eligible)}، با پاسخ ${formatFaNumber(worst.withReply)}) — Availability نه Validity`;
+}
 
 const slate = "#64748b";
 const amber = "#d97706";
@@ -118,8 +185,8 @@ export function HistoricalAnswerIntelligence() {
     };
   }, [data]);
 
-  const funnelCompareOption = useMemo<EChartsOption>(() => {
-    if (!data) return {};
+  const funnelCompareOption = useMemo(() => {
+    if (!data) return {} as EChartsOption;
     return {
       color: [amber, "#94a3b8", "#94a3b8"],
       textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
@@ -146,14 +213,39 @@ export function HistoricalAnswerIntelligence() {
           label: {
             show: true,
             position: "right",
-            formatter: (p: { dataIndex: number; value: number }) =>
-              p.dataIndex < 2 ? "ناموجود در دیده‌بان" : formatFaPercent(Number(p.value)),
+            formatter: (p: { dataIndex?: number; value?: unknown }) =>
+              (p.dataIndex ?? 0) < 2 ? "ناموجود در دیده‌بان" : formatFaPercent(Number(p.value)),
             fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif",
           },
         },
       ],
-    };
+    } as EChartsOption;
   }, [data]);
+
+  const deptCoverageOption = useMemo<EChartsOption>(() => {
+    if (!data?.coverageByDepartment?.length) return {};
+    return coveragePercentBarOption(data.coverageByDepartment);
+  }, [data]);
+
+  const subjectCoverageOption = useMemo<EChartsOption>(() => {
+    if (!data?.coverageBySubject?.length) return {};
+    return coveragePercentBarOption(data.coverageBySubject);
+  }, [data]);
+
+  const suggestedFinding = useMemo(() => {
+    if (!data) return "";
+    return (
+      topGapFinding(data.coverageByDepartment, "واحد") ??
+      topGapFinding(data.coverageBySubject, "موضوع") ??
+      ""
+    );
+  }, [data]);
+
+  const actionHref = useMemo(() => {
+    const params = new URLSearchParams({ kpi: "D1" });
+    if (suggestedFinding) params.set("finding", suggestedFinding);
+    return `/performance/actions?${params.toString()}`;
+  }, [suggestedFinding]);
 
   if (!data || !selected) {
     return (
@@ -193,6 +285,86 @@ export function HistoricalAnswerIntelligence() {
         <ChartCard title="Availability در برابر Validity" subtitle="شاخص‌های ناموجود خاموش می‌مانند">
           <EChart option={funnelCompareOption} height={300} />
         </ChartCard>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">تشخیص پوشش بر اساس بُعد</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-600">
+              ۱۲ واحد/موضوع با بیشترین حجم مشمول — میله = درصد Availability. نارنجی = ضعیف‌ترین پوشش در
+              این برش. برای اقدام عملیاتی ثبت کنید؛ عامل تصمیم‌گیرنده انسان است.
+            </p>
+          </div>
+          <Link
+            href={actionHref}
+            className="inline-flex items-center gap-1.5 rounded-md border border-teal-700/30 bg-teal-50 px-3 py-2 text-xs font-medium text-teal-900 hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+          >
+            <ClipboardList className="h-3.5 w-3.5" />
+            ثبت اقدام از این یافته
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <ChartCard
+            title="پوشش پاسخ بر اساس واحد"
+            subtitle="مرتب بر درصد پوشش · حجم مشمول در راهنما"
+          >
+            {data.coverageByDepartment?.length ? (
+              <EChart option={deptCoverageOption} height={320} />
+            ) : (
+              <p className="py-12 text-center text-sm text-[var(--muted)]">دادهٔ واحد برای این فیلتر نیست.</p>
+            )}
+          </ChartCard>
+          <ChartCard
+            title="پوشش پاسخ بر اساس موضوع"
+            subtitle="مرتب بر درصد پوشش · حجم مشمول در راهنما"
+          >
+            {data.coverageBySubject?.length ? (
+              <EChart option={subjectCoverageOption} height={320} />
+            ) : (
+              <p className="py-12 text-center text-sm text-[var(--muted)]">دادهٔ موضوع برای این فیلتر نیست.</p>
+            )}
+          </ChartCard>
+        </div>
+        {(data.coverageByDepartment?.length || data.coverageBySubject?.length) ? (
+          <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-white">
+            <table className="w-full min-w-[640px] text-right text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 text-xs text-[var(--muted)]">
+                  <th className="px-3 py-2 font-medium">بُعد</th>
+                  <th className="px-3 py-2 font-medium">نام</th>
+                  <th className="px-3 py-2 font-medium">مشمول</th>
+                  <th className="px-3 py-2 font-medium">با پاسخ شهروند</th>
+                  <th className="px-3 py-2 font-medium">پوشش</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data.coverageByDepartment ?? []).slice(0, 5).map((r) => (
+                  <tr key={`d-${r.id}`} className="border-b border-slate-50">
+                    <td className="px-3 py-2 text-xs text-slate-500">واحد</td>
+                    <td className="px-3 py-2 font-medium text-slate-900">{r.name}</td>
+                    <td className="px-3 py-2">{formatFaNumber(r.eligible)}</td>
+                    <td className="px-3 py-2">{formatFaNumber(r.withReply)}</td>
+                    <td className="px-3 py-2 font-semibold text-amber-900">
+                      {formatFaPercent(r.coveragePercent)}
+                    </td>
+                  </tr>
+                ))}
+                {(data.coverageBySubject ?? []).slice(0, 5).map((r) => (
+                  <tr key={`s-${r.id}`} className="border-b border-slate-50">
+                    <td className="px-3 py-2 text-xs text-slate-500">موضوع</td>
+                    <td className="px-3 py-2 font-medium text-slate-900">{r.name}</td>
+                    <td className="px-3 py-2">{formatFaNumber(r.eligible)}</td>
+                    <td className="px-3 py-2">{formatFaNumber(r.withReply)}</td>
+                    <td className="px-3 py-2 font-semibold text-amber-900">
+                      {formatFaPercent(r.coveragePercent)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-5">

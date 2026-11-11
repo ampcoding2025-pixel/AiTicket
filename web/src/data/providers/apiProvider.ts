@@ -133,6 +133,14 @@ type ApiCategory = {
   tree: ApiCategoryNode[];
 };
 
+type ApiCoverageDimension = {
+  id: string;
+  name: string;
+  eligible: number;
+  withReply: number;
+  coveragePercent: number;
+};
+
 type ApiAnswers = {
   meta: ApiMeta;
   ruleSetVersion: string;
@@ -168,7 +176,19 @@ type ApiAnswers = {
     validity: string;
     validityNote: string;
   }[];
+  coverageByDepartment?: ApiCoverageDimension[];
+  coverageBySubject?: ApiCoverageDimension[];
 };
+
+function mapCoverageDimension(rows: ApiCoverageDimension[] | undefined) {
+  return (rows ?? []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    eligible: Number(r.eligible),
+    withReply: Number(r.withReply),
+    coveragePercent: Number(r.coveragePercent),
+  }));
+}
 
 async function fetchJson<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -382,6 +402,8 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
         validity: c.validity as AnswerValidityStatus,
         validityNote: c.validityNote,
       })),
+      coverageByDepartment: mapCoverageDimension(data.coverageByDepartment),
+      coverageBySubject: mapCoverageDimension(data.coverageBySubject),
     };
   },
 

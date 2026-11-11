@@ -232,6 +232,24 @@ public sealed class DidbanKnowledgeQueryService(
 
         var casesPage = await GetAnswerCasesAsync(filter, null, 1, 8, ct);
 
+        var byDepartment = await LoadCoverageByDimensionAsync(
+            connection,
+            whereSql,
+            dp,
+            dimIdExpr: "ISNULL(CAST(c.DepartmentId AS nvarchar(20)), N'0')",
+            dimNameExpr: "ISNULL(d.DepartmentName, N'نامشخص')",
+            joinSql: "LEFT JOIN dbo.Department d ON d.DepartmentId = c.DepartmentId",
+            ct);
+
+        var bySubject = await LoadCoverageByDimensionAsync(
+            connection,
+            whereSql,
+            dp,
+            dimIdExpr: "ISNULL(CAST(c.SubjectId AS nvarchar(20)), N'0')",
+            dimNameExpr: "ISNULL(s.SubjectName, N'نامشخص')",
+            joinSql: "LEFT JOIN dbo.Subject s ON s.SubjectId = c.SubjectId",
+            ct);
+
         var summary = new List<KpiCardDto>
         {
             new("eligible", "پرونده‌های مشمول", eligible, "count", null, "neutral", null, "feasible"),
@@ -253,7 +271,48 @@ public sealed class DidbanKnowledgeQueryService(
                 f.ReuseCount,
                 f.LastUsed ?? "",
                 "available_unvalidated")).ToList(),
-            casesPage.Items);
+            casesPage.Items,
+            byDepartment,
+            bySubject);
+    }
+
+    private static async Task<IReadOnlyList<CoverageDimensionDto>> LoadCoverageByDimensionAsync(
+        System.Data.IDbConnection connection,
+        string whereSql,
+        DynamicParameters dp,
+        string dimIdExpr,
+        string dimNameExpr,
+        string joinSql,
+        CancellationToken ct)
+    {
+        var rows = await connection.QueryAsync<DimensionRow>(
+            new CommandDefinition(
+                $"""
+                SELECT TOP 12
+                  {dimIdExpr} AS DimId,
+                  {dimNameExpr} AS DimName,
+                  COUNT_BIG(*) AS Eligible,
+                  COUNT_BIG(replied.CookieId) AS WithReply
+                FROM dbo.Cookie c
+                {joinSql}
+                LEFT JOIN (
+                  SELECT DISTINCT f.CookieId
+                  FROM dbo.CookieFlow f
+                  WHERE f.CookieFlowReplyCitizen IS NOT NULL
+                    AND LEN(LTRIM(RTRIM(f.CookieFlowReplyCitizen))) > 0
+                ) replied ON replied.CookieId = c.CookieId
+                {whereSql}
+                GROUP BY {dimIdExpr}, {dimNameExpr}
+                ORDER BY COUNT_BIG(*) DESC
+                """,
+                dp,
+                cancellationToken: ct));
+
+        return rows.Select(r =>
+        {
+            var pct = r.Eligible == 0 ? 0 : Math.Round(100.0 * r.WithReply / r.Eligible, 1);
+            return new CoverageDimensionDto(r.DimId ?? "0", r.DimName ?? "نامشخص", r.Eligible, r.WithReply, pct);
+        }).ToList();
     }
 
     private static string FilterKey(PeriodFilter filter) =>
@@ -279,6 +338,14 @@ public sealed class DidbanKnowledgeQueryService(
 
     private sealed class CoverageRow
     {
+        public long Eligible { get; init; }
+        public long WithReply { get; init; }
+    }
+
+    private sealed class DimensionRow
+    {
+        public string? DimId { get; init; }
+        public string? DimName { get; init; }
         public long Eligible { get; init; }
         public long WithReply { get; init; }
     }

@@ -10,7 +10,17 @@ public sealed record AnswerIntelligenceResponse(
     CoverageBreakdownDto CoverageBreakdown,
     IReadOnlyList<CoverageTrendPointDto> CoverageTrend,
     IReadOnlyList<FrequentAnswerDto> FrequentAnswers,
-    IReadOnlyList<AnswerCaseDto> Cases);
+    IReadOnlyList<AnswerCaseDto> Cases,
+    IReadOnlyList<CoverageDimensionDto> CoverageByDepartment,
+    IReadOnlyList<CoverageDimensionDto> CoverageBySubject);
+
+/** Diagnostic slice: where Availability concentrates (not Validity). */
+public sealed record CoverageDimensionDto(
+    string Id,
+    string Name,
+    long Eligible,
+    long WithReply,
+    double CoveragePercent);
 
 public sealed record CoverageBreakdownDto(
     long TotalEligible,

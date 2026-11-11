@@ -166,4 +166,16 @@ export const mockAnswerIntelligence: AnswerIntelligenceData = {
       validityNote: "پرونده نویز کانال — کاندید پاسخ تاریخی معنادار نیست.",
     },
   ],
+  coverageByDepartment: [
+    { id: "1", name: "اداره بهزیستی استان تهران", eligible: 42000, withReply: 1800, coveragePercent: 4.3 },
+    { id: "2", name: "اداره بهزیستی استان اصفهان", eligible: 18000, withReply: 1400, coveragePercent: 7.8 },
+    { id: "3", name: "اداره بهزیستی خراسان رضوی", eligible: 16000, withReply: 900, coveragePercent: 5.6 },
+    { id: "4", name: "مرکز پیام", eligible: 12000, withReply: 400, coveragePercent: 3.3 },
+  ],
+  coverageBySubject: [
+    { id: "10", name: "حق پرستاری و مددکاری", eligible: 8500, withReply: 920, coveragePercent: 10.8 },
+    { id: "11", name: "واریز مستمری توانبخشی", eligible: 7200, withReply: 480, coveragePercent: 6.7 },
+    { id: "12", name: "کمیسیون پزشکی", eligible: 5100, withReply: 210, coveragePercent: 4.1 },
+    { id: "13", name: "مسکن موقت", eligible: 3900, withReply: 95, coveragePercent: 2.4 },
+  ],
 };

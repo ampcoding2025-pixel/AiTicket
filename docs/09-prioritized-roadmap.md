@@ -84,6 +84,8 @@ Deliverables:
 
 **Exit:** Executive Dashboard can run on `DATA_PROVIDER=api` against Didban aggregates. **P3 core + polish complete** — remaining product gap: topics NLP (P4), stakeholder sign-off on rules.
 
+**Decision loop (beyond NLP meeting stack):** coverage-by-department/subject on answers API + diagnosis UI; browser-local action register — see `docs/15-decision-action-loop.md`.
+
 ---
 
 ### P4 — Historical analytics & offline NLP (not automation) — **STARTED**
