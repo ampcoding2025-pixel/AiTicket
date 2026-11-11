@@ -17,19 +17,21 @@ const amber = "#d97706";
 
 function horizontalBarOption(
   rows: NamedValue[],
-  opts?: { labelWidth?: number; barWidth?: number },
+  opts?: { labelWidth?: number; barWidth?: number; highlightMax?: boolean },
 ): EChartsOption {
   const sorted = [...rows].sort((a, b) => a.value - b.value);
   const labelWidth = opts?.labelWidth ?? 130;
+  const maxValue = sorted.length ? Math.max(...sorted.map((r) => r.value)) : 0;
+  const highlightMax = opts?.highlightMax !== false;
+
   return {
-    color: [brand],
     textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
     tooltip: {
       trigger: "axis",
       axisPointer: { type: "shadow" },
       valueFormatter: (v) => formatFaNumber(Number(v)),
     },
-    grid: { left: labelWidth + 12, right: 16, top: 8, bottom: 20 },
+    grid: { left: labelWidth + 12, right: 48, top: 8, bottom: 20 },
     xAxis: {
       type: "value",
       min: 0,
@@ -45,10 +47,27 @@ function horizontalBarOption(
     series: [
       {
         type: "bar",
-        data: sorted.map((r) => r.value),
+        data: sorted.map((r) => ({
+          value: r.value,
+          itemStyle: {
+            color: highlightMax && r.value === maxValue && maxValue > 0 ? amber : brand,
+          },
+        })),
         barWidth: opts?.barWidth ?? 12,
-        // Values via tooltip only — reduces chart label clutter (Ch.3)
-        label: { show: false },
+        // Ch.6: show magnitude on the emphasized (max) bar only
+        label: {
+          show: true,
+          position: "right",
+          color: slate,
+          fontSize: 11,
+          formatter: (p: { value?: number | number[]; dataIndex?: number }) => {
+            const v = Array.isArray(p.value) ? Number(p.value[0]) : Number(p.value);
+            if (!highlightMax || !Number.isFinite(v) || v !== maxValue || maxValue <= 0) {
+              return "";
+            }
+            return formatFaNumber(v);
+          },
+        },
       },
     ],
   };
@@ -167,22 +186,48 @@ export function ExecutiveDashboard() {
     };
   }, [filters.period, filters.subjectClassId]);
 
+  const volumeInsight = useMemo(() => {
+    if (!data?.volumeTrend.length) return null;
+    const pts = data.volumeTrend;
+    const last = pts[pts.length - 1]!;
+    const prev = pts.length > 1 ? pts[pts.length - 2] : null;
+    if (!prev) {
+      return `آخرین نقطه: ${last.label} — ${formatFaNumber(last.requests)} پرونده`;
+    }
+    const delta = last.requests - prev.requests;
+    const dir = delta > 0 ? "افزایش" : delta < 0 ? "کاهش" : "بدون تغییر";
+    const deltaText =
+      delta === 0 ? "بدون تغییر نسبت به ماه قبل" : `${dir} ${formatFaNumber(Math.abs(delta))} نسبت به ماه قبل`;
+    return `${last.label}: حجم کل ${deltaText}. خط پررنگ = کل پرونده؛ خط نازک نارنجی = شکایت.`;
+  }, [data]);
+
   const volumeOption = useMemo<EChartsOption>(() => {
-    if (!data) return {};
+    if (!data?.volumeTrend.length) return {};
+    const labels = data.volumeTrend.map((p) => p.label);
+    const requests = data.volumeTrend.map((p) => p.requests);
+    const complaints = data.volumeTrend.map((p) => p.complaints);
+    const lastIdx = labels.length - 1;
+
     return {
-      color: [brand, amber],
       textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
-      tooltip: { trigger: "axis" },
-      legend: { data: ["کل پرونده", "شکایت"], bottom: 0 },
-      grid: { left: 48, right: 16, top: 24, bottom: 48 },
+      tooltip: {
+        trigger: "axis",
+        valueFormatter: (v) => formatFaNumber(Number(v)),
+      },
+      // Direct end labels replace bottom legend (Ch.6 model #1/#2)
+      legend: { show: false },
+      grid: { left: 48, right: 88, top: 28, bottom: 28 },
       xAxis: {
         type: "category",
-        data: data.volumeTrend.map((p) => p.label),
+        data: labels,
+        boundaryGap: false,
         axisLabel: { color: slate, hideOverlap: true },
       },
       yAxis: {
         type: "value",
         min: 0,
+        name: "تعداد",
+        nameTextStyle: { color: slate, fontSize: 11 },
         axisLabel: { color: slate },
         splitLine: { lineStyle: { color: "#eef2f7" } },
       },
@@ -192,14 +237,50 @@ export function ExecutiveDashboard() {
           type: "line",
           smooth: false,
           showSymbol: false,
-          data: data.volumeTrend.map((p) => p.requests),
+          symbol: "circle",
+          symbolSize: 7,
+          data: requests,
+          lineStyle: { width: 3, color: brand },
+          itemStyle: { color: brand },
+          endLabel: {
+            show: true,
+            formatter: "کل پرونده",
+            color: brand,
+            fontSize: 11,
+            fontWeight: 600,
+            distance: 6,
+          },
+          // Emphasize latest observation (annotation anchor)
+          markPoint: {
+            symbol: "circle",
+            symbolSize: 10,
+            data: [{ coord: [labels[lastIdx], requests[lastIdx]], name: "آخرین" }],
+            itemStyle: { color: brand },
+            label: {
+              show: true,
+              formatter: formatFaNumber(requests[lastIdx] ?? 0),
+              position: "top",
+              color: brand,
+              fontSize: 11,
+              fontWeight: 600,
+            },
+          },
         },
         {
           name: "شکایت",
           type: "line",
           smooth: false,
           showSymbol: false,
-          data: data.volumeTrend.map((p) => p.complaints),
+          data: complaints,
+          lineStyle: { width: 1.5, color: amber },
+          itemStyle: { color: amber },
+          endLabel: {
+            show: true,
+            formatter: "شکایت",
+            color: amber,
+            fontSize: 11,
+            distance: 6,
+          },
         },
       ],
     };
@@ -328,7 +409,11 @@ export function ExecutiveDashboard() {
           <div className="xl:col-span-2">
             <ChartCard
               title="روند حجم پرونده و شکایت"
-              subtitle={data.volumeTrend.length ? "ماهانه" : "سری زمانی در دسترس نیست"}
+              subtitle={
+                data.volumeTrend.length
+                  ? (volumeInsight ?? "سری ماهانه تاریخی — بدون پیش‌بینی")
+                  : "سری زمانی در دسترس نیست"
+              }
             >
               {data.volumeTrend.length ? (
                 <EChart option={volumeOption} height={280} />
@@ -339,7 +424,11 @@ export function ExecutiveDashboard() {
               )}
             </ChartCard>
           </div>
-          <ChartCard title="توزیع SubjectClass" subtitle="مقایسه طبقات درخواست" flat>
+          <ChartCard
+            title="توزیع طبقه درخواست"
+            subtitle="مقایسه حجم طبقات (SubjectClass) — میلهٔ نارنجی = بیشترین"
+            flat
+          >
             <EChart option={classOption} height={280} />
           </ChartCard>
         </div>
@@ -401,7 +490,11 @@ export function ExecutiveDashboard() {
         <SectionLabel>دانش و موضوعات</SectionLabel>
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <div className="xl:col-span-2">
-            <ChartCard title="موضوعات پرتکرار" subtitle="رتبه حجم Subject" flat>
+            <ChartCard
+              title="موضوعات پرتکرار"
+              subtitle="رتبه حجم موضوع — میلهٔ نارنجی = رتبهٔ اول"
+              flat
+            >
               <EChart option={subjectOption} height={280} />
             </ChartCard>
           </div>
