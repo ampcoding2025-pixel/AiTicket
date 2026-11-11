@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace AiTicket.Api.Modules.Analytics;
 
-public sealed class DidbanAnalyticsQueryService(
+public sealed partial class DidbanAnalyticsQueryService(
     IDidbanConnectionFactory connectionFactory,
     IOptions<AnalyticsOptions> analyticsOptions,
     ILogger<DidbanAnalyticsQueryService> logger) : IAnalyticsQueryService

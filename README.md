@@ -20,11 +20,28 @@ api/      ASP.NET Core read-only analytics API (Phase 3)
 
 ```bash
 cd web
-npm install
-npm run dev
+npm.cmd install
+npm.cmd run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+Branding uses `web/public/behzisti-logo.png` in the sidebar.
+
+### Live API mode (optional)
+
+```bash
+# terminal 1 — API with user-secrets Didban connection
+cd api/AiTicket.Api
+dotnet run
+
+# terminal 2 — web pointed at API
+cd web
+# set in .env.local:
+# NEXT_PUBLIC_DATA_PROVIDER=api
+# NEXT_PUBLIC_API_BASE_URL=http://localhost:5088
+npm.cmd run dev
+```
 
 ## Didban Access Policy
 
@@ -48,7 +65,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | Phase 2 Admin shells (Mock) | Done (`/admin/*`) |
 | **Phase 2 Presentation Layer** | **Complete (Mock, Behzisti-shaped)** |
 | Phase 3 API contracts (docs) | Done draft — `docs/11`–`13` + OpenAPI |
-| Phase 3 Backend API skeleton | Started — `api/AiTicket.Api` (executive/requests/kpis live queries) |
+| Phase 3 Backend API | Core done — executive/requests/categories/answers + cache; web API provider wired |
 | Didban schema discovery | **Done (read-only)** — see `docs/08` |
 | KPI feasibility mapping | **Done (first pass)** — see `docs/04` |
 | Prioritized roadmap | `docs/09-prioritized-roadmap.md` |

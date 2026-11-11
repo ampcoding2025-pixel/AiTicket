@@ -73,13 +73,13 @@ Deliverables:
 - [x] ASP.NET modular monolith skeleton (`api/AiTicket.Api`)
 - [x] Read-only SQL (Dapper) for executive / requests / KPI values
 - [x] Health + admin sources probe
-- [ ] Cache aggregates
-- [ ] Frontend `DATA_PROVIDER=api` swap
-- [ ] Category tree + answer cases endpoints
+- [x] Cache aggregates (`IMemoryCache`, ~3 minutes)
+- [x] Frontend `DATA_PROVIDER=api` swap (executive, requests, categories, answers; topics/KPI catalog/admin still Mock fallback)
+- [x] Category tree + answer summary/cases endpoints
 
 **First live KPI set (API):** A1, A2, A3, B1/B2/B3 (needs_rules), D1, C3 unavailable.
 
-**Exit:** Executive Dashboard can run on `DATA_PROVIDER=api` against Didban aggregates.
+**Exit:** Executive Dashboard can run on `DATA_PROVIDER=api` against Didban aggregates. **P3 core complete** — remaining polish: volume trend endpoint, KPI dictionary live values, topics NLP.
 
 ---
 
@@ -110,9 +110,9 @@ Deliverables:
 
 ## What We Will Dig Next (Immediate Working Decision)
 
-**P1 Presentation Layer is complete (Mock).**  
+**P1–P3 core complete.** API serves executive/requests/categories/answers/KPIs with cache; web can use `NEXT_PUBLIC_DATA_PROVIDER=api`.
 
-**Next = P2:** API contracts + analytical field map (OpenAPI, eligibility/resolved-status rules, PII matrix), then P3 read-only live aggregates for Feasible KPIs only.
+**Next:** stakeholder sign-off on eligibility/resolved rules; then P3 polish (volume trend, live KPI dictionary) or start P4 offline NLP.
 
 We will **not** yet: train production classifiers, call ChatGPT on citizen text at scale, or write to Didban.
 

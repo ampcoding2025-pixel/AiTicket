@@ -1,6 +1,7 @@
 using AiTicket.Api.Infrastructure.Analytics;
 using AiTicket.Api.Infrastructure.Didban;
 using AiTicket.Api.Modules.Analytics;
+using AiTicket.Api.Modules.Knowledge;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,8 +9,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<DidbanOptions>(builder.Configuration.GetSection(DidbanOptions.SectionName));
 builder.Services.Configure<AnalyticsOptions>(builder.Configuration.GetSection(AnalyticsOptions.SectionName));
 
+builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IDidbanConnectionFactory, SqlDidbanConnectionFactory>();
-builder.Services.AddScoped<IAnalyticsQueryService, DidbanAnalyticsQueryService>();
+builder.Services.AddScoped<DidbanAnalyticsQueryService>();
+builder.Services.AddScoped<IAnalyticsQueryService, CachingAnalyticsQueryService>();
+builder.Services.AddScoped<IKnowledgeQueryService, DidbanKnowledgeQueryService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
