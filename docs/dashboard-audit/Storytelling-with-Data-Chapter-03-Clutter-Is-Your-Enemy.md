@@ -300,6 +300,19 @@ Chapter 4+ focus/attention rules were not included in this scorecard.
 
 ---
 
-## Remediations
+## Remediations applied (2026-11-11)
 
-_Status: audit only — implementation not yet applied._
+| Finding | Change shipped |
+|---------|----------------|
+| F-02 Context ×3 | DemoBanner → thin mode chip; context strip keeps period/Big Idea; KPI cards no longer repeat period |
+| F-03 Enclosure | ChartCard: no shadow; `flat` mode uses top rule only for secondary panels |
+| F-01 Meta subtitles | Technique narration removed; business-only subtitles |
+| F-04 Insights | Neutral numbered list + text severity; no colored tiles/icons |
+| F-05 FinishTime dual | Two numbers + % share only; stacked bar removed |
+| F-06 Bar labels | End labels off; tooltip only |
+| F-07 KPI chrome | No hover «جزئیات»; no empty «بدون مقایسه» line unless real delta |
+| F-08 Continuity | Section labels: شاخص‌ها / حجم / اقدام / دانش / سازمان |
+| F-09 Coverage bar | Progress bar removed; large % + caveat |
+| F-10 Unavailable | Plain text rows under heading |
+
+Filters and feasible KPIs retained.

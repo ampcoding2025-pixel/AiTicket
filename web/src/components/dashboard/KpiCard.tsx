@@ -35,13 +35,11 @@ const feasibilityStyle: Record<KpiFeasibility, string> = {
 export function KpiCard({
   kpi,
   onOpen,
-  periodLabel,
   compact,
 }: {
   kpi: ExecutiveKpi;
   onOpen?: (id: string) => void;
-  periodLabel?: string;
-  /** Compact row for unavailable / secondary metrics */
+  /** Plain text row for unavailable metrics */
   compact?: boolean;
 }) {
   const hasDelta = typeof kpi.deltaPercent === "number" && Number.isFinite(kpi.deltaPercent);
@@ -54,20 +52,10 @@ export function KpiCard({
       <button
         type="button"
         onClick={() => onOpen?.(kpi.id)}
-        className="flex w-full items-center justify-between gap-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5 text-right transition hover:border-slate-300"
+        className="flex w-full items-baseline justify-between gap-3 py-1.5 text-right text-sm text-slate-600 hover:text-slate-900"
       >
-        <div className="min-w-0">
-          <div className="text-xs text-slate-600">{kpi.label}</div>
-          {kpi.hint ? <p className="mt-0.5 text-[10px] text-slate-400">{kpi.hint}</p> : null}
-        </div>
-        <div className="shrink-0 text-left">
-          <div className="text-sm font-semibold text-slate-700">{formatValue(kpi)}</div>
-          {kpi.feasibility ? (
-            <div className={cn("mt-0.5 text-[10px]", feasibilityStyle[kpi.feasibility], "bg-transparent")}>
-              {feasibilityLabel[kpi.feasibility]}
-            </div>
-          ) : null}
-        </div>
+        <span className="min-w-0 truncate">{kpi.label}</span>
+        <span className="shrink-0 font-medium text-slate-500">{formatValue(kpi)}</span>
       </button>
     );
   }
@@ -77,7 +65,7 @@ export function KpiCard({
       type="button"
       onClick={() => onOpen?.(kpi.id)}
       className={cn(
-        "group rounded-xl border border-[var(--border)] bg-white p-4 text-right transition hover:border-[var(--brand)]/40",
+        "rounded-lg border border-[var(--border)] bg-white p-4 text-right transition hover:border-[var(--brand)]/35",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]",
       )}
     >
@@ -95,28 +83,18 @@ export function KpiCard({
         ) : null}
       </div>
       <div className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{formatValue(kpi)}</div>
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-400">
-        {unit ? <span>{unit}</span> : null}
-        {periodLabel ? <span>· {periodLabel}</span> : null}
-      </div>
-      <div className="mt-3 flex items-center justify-between gap-2">
-        {hasDelta ? (
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
-              up ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700",
-            )}
-          >
-            {up ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-            {formatFaPercent(Math.abs(kpi.deltaPercent!))}
-          </span>
-        ) : (
-          <span className="text-[11px] text-slate-400">بدون مقایسه دوره قبل</span>
-        )}
-        <span className="text-[11px] text-slate-400 opacity-0 transition group-hover:opacity-100">
-          جزئیات
-        </span>
-      </div>
+      {unit ? <div className="mt-1 text-[11px] text-slate-400">{unit}</div> : null}
+      {hasDelta ? (
+        <div
+          className={cn(
+            "mt-3 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
+            up ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700",
+          )}
+        >
+          {up ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+          {formatFaPercent(Math.abs(kpi.deltaPercent!))}
+        </div>
+      ) : null}
       {kpi.hint ? <p className="mt-2 text-[11px] leading-4 text-slate-400">{kpi.hint}</p> : null}
     </button>
   );
