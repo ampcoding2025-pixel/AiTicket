@@ -59,7 +59,3 @@ export const mockAnalyticsProvider: AnalyticsDataProvider = {
   },
 };
 
-export function getAnalyticsProvider(): AnalyticsDataProvider {
-  // Future: switch via env NEXT_PUBLIC_DATA_PROVIDER=api
-  return mockAnalyticsProvider;
-}

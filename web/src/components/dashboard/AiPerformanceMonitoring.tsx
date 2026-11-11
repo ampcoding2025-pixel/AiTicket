@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { EChart } from "@/components/charts/EChart";
-import { getAnalyticsProvider } from "@/data/providers/mockProvider";
+import { getAnalyticsProvider } from "@/data/providers";
 import type { AiMetricStatus, AiPerformanceData } from "@/data/providers/types";
 import { cn, formatFaNumber, formatFaPercent } from "@/lib/utils";
 import { Bot, CheckCircle2, Circle } from "lucide-react";

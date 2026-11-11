@@ -5,7 +5,7 @@ import { cn, formatFaNumber, formatFaPercent } from "@/lib/utils";
 import { TrendingDown, TrendingUp } from "lucide-react";
 
 function formatValue(kpi: ExecutiveKpi) {
-  if (kpi.feasibility === "unavailable") return "—";
+  if (kpi.feasibility === "unavailable" || kpi.value == null) return "—";
   if (kpi.unit === "percent") return formatFaPercent(kpi.value);
   if (kpi.unit === "days") return formatFaNumber(kpi.value, 1);
   return formatFaNumber(kpi.value);

@@ -10,7 +10,7 @@ export type KpiFeasibility =
 export type ExecutiveKpi = {
   id: string;
   label: string;
-  value: number;
+  value: number | null;
   unit?: "count" | "percent" | "days";
   deltaPercent?: number;
   tone?: KpiTone;
@@ -63,7 +63,7 @@ export type ExecutiveDashboardData = {
 
 export type RequestAnalyticsData = {
   meta: {
-    source: "mock";
+    source: DataSourceKind;
     label: string;
     periodLabel: string;
   };
@@ -104,7 +104,7 @@ export type CategoryNode = {
 
 export type CategoryExplorerData = {
   meta: {
-    source: "mock";
+    source: DataSourceKind;
     label: string;
     periodLabel: string;
     note: string;
@@ -176,7 +176,7 @@ export type HistoricalAnswerCase = {
 
 export type AnswerIntelligenceData = {
   meta: {
-    source: "mock";
+    source: DataSourceKind;
     label: string;
     periodLabel: string;
     caveat: string;

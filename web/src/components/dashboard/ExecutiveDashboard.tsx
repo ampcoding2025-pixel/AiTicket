@@ -5,7 +5,7 @@ import type { EChartsOption } from "echarts";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { EChart } from "@/components/charts/EChart";
-import { getAnalyticsProvider } from "@/data/providers/mockProvider";
+import { getAnalyticsProvider } from "@/data/providers";
 import type { ExecutiveDashboardData } from "@/data/providers/types";
 import { formatFaNumber, formatFaPercent } from "@/lib/utils";
 import { AlertTriangle, Lightbulb, Info } from "lucide-react";
@@ -226,9 +226,19 @@ export function ExecutiveDashboard() {
         <div className="xl:col-span-2">
           <ChartCard
             title="روند حجم پرونده و شکایت"
-            subtitle="مقایسه ماهانه — داده نمایشی با ابعاد دیده‌بان"
+            subtitle={
+              data.volumeTrend.length
+                ? "مقایسه ماهانه"
+                : "سری زمانی هنوز از API برنمی‌گردد — KPIها زنده هستند"
+            }
           >
-            <EChart option={volumeOption} height={300} />
+            {data.volumeTrend.length ? (
+              <EChart option={volumeOption} height={300} />
+            ) : (
+              <div className="flex h-[300px] items-center justify-center text-sm text-[var(--muted)]">
+                نمودار روند در نسخه فعلی API پیاده نشده است.
+              </div>
+            )}
           </ChartCard>
         </div>
         <ChartCard title="توزیع SubjectClass" subtitle="شکایت / راهنمایی / گزارش / پیشنهاد">
@@ -244,7 +254,13 @@ export function ExecutiveDashboard() {
           <EChart option={orgOption} height={300} />
         </ChartCard>
         <ChartCard title="وضعیت رسیدگی" subtitle="CookieStatus — نیازمند قاعده بسته‌شدن">
-          <EChart option={statusOption} height={300} />
+          {data.resolutionStatus.length ? (
+            <EChart option={statusOption} height={300} />
+          ) : (
+            <div className="flex h-[300px] items-center justify-center text-sm text-[var(--muted)]">
+              توزیع وضعیت در این منبع هنوز متصل نشده است.
+            </div>
+          )}
         </ChartCard>
       </section>
 
@@ -360,7 +376,7 @@ export function ExecutiveDashboard() {
             </div>
             <div className="mt-4 rounded-xl bg-slate-50 p-4">
               <div className="text-3xl font-bold text-slate-900">
-                {selected.feasibility === "unavailable"
+                {selected.feasibility === "unavailable" || selected.value == null
                   ? "—"
                   : selected.unit === "percent"
                     ? formatFaPercent(selected.value)

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChartCard } from "@/components/dashboard/ChartCard";
-import { getAnalyticsProvider } from "@/data/providers/mockProvider";
+import { getAnalyticsProvider } from "@/data/providers";
 import type { AdminCenterData } from "@/data/providers/types";
 import { cn } from "@/lib/utils";
 

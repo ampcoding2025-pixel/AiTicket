@@ -5,7 +5,7 @@ import type { EChartsOption } from "echarts";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { EChart } from "@/components/charts/EChart";
-import { getAnalyticsProvider } from "@/data/providers/mockProvider";
+import { getAnalyticsProvider } from "@/data/providers";
 import type { CategoryExplorerData, CategoryNode, TaxonomyLevel } from "@/data/providers/types";
 import { cn, formatFaNumber, formatFaPercent } from "@/lib/utils";
 import { ChevronLeft, ChevronDown, FolderTree } from "lucide-react";
