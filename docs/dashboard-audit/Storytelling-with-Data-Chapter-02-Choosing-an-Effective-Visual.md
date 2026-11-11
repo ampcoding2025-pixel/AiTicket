@@ -279,6 +279,17 @@ No Chapter 3+ clutter/focus criteria were scored here.
 
 ---
 
-## Remediations
+## Remediations applied (2026-11-11)
 
-_Status: audit only — implementation not yet applied._
+| Finding | Change shipped |
+|---------|----------------|
+| V05 / V10 pies | SubjectClass & Channel → sorted horizontal bars (Top N + سایر for channels) |
+| V12 FinishTime pie | Two big numbers + 100% stacked bar; needs_rules subtitle kept |
+| V09 Coverage gauge | Large text % + thin progress bar + caveat |
+| V04 Line+area+smooth | Dual straight lines, `min: 0`, no area fill |
+| V02/V03 fake deltas | Delta chip only when `deltaPercent` is a real number; else «بدون مقایسه دوره قبل» |
+| V07+V08 duplication | Single subject horizontal bar chart |
+| Unavailable KPIs | Compact dashed rows instead of full cards |
+| KPI context | Unit + periodLabel under primary values |
+
+Re-score target after UI refresh: expect C2.03 / C2.18 / C2.17 to move toward compliant.

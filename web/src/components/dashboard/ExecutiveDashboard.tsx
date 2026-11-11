@@ -7,7 +7,7 @@ import { KpiCard } from "@/components/dashboard/KpiCard";
 import { EChart } from "@/components/charts/EChart";
 import { getAnalyticsProvider } from "@/data/providers";
 import { useDashboardFilters } from "@/data/DashboardFilterContext";
-import type { ExecutiveDashboardData } from "@/data/providers/types";
+import type { ExecutiveDashboardData, NamedValue } from "@/data/providers/types";
 import { formatFaNumber, formatFaPercent } from "@/lib/utils";
 import { AlertTriangle, Lightbulb, Info } from "lucide-react";
 import Link from "next/link";
@@ -15,6 +15,49 @@ import Link from "next/link";
 const brand = "#0f766e";
 const slate = "#64748b";
 const amber = "#d97706";
+
+function horizontalBarOption(
+  rows: NamedValue[],
+  opts?: { labelWidth?: number; barWidth?: number },
+): EChartsOption {
+  const sorted = [...rows].sort((a, b) => a.value - b.value);
+  const labelWidth = opts?.labelWidth ?? 130;
+  return {
+    color: [brand],
+    textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      valueFormatter: (v) => formatFaNumber(Number(v)),
+    },
+    grid: { left: labelWidth + 16, right: 28, top: 8, bottom: 24 },
+    xAxis: {
+      type: "value",
+      min: 0,
+      axisLabel: { color: slate },
+      splitLine: { lineStyle: { color: "#e2e8f0" } },
+    },
+    yAxis: {
+      type: "category",
+      data: sorted.map((r) => r.name),
+      axisLabel: { color: slate, width: labelWidth, overflow: "truncate" },
+    },
+    series: [
+      {
+        type: "bar",
+        data: sorted.map((r) => r.value),
+        barWidth: opts?.barWidth ?? 12,
+        label: {
+          show: true,
+          position: "right",
+          color: slate,
+          fontSize: 10,
+          formatter: (p) => formatFaNumber(Number(p.value)),
+        },
+      },
+    ],
+  };
+}
 
 export function ExecutiveDashboard() {
   const { filters } = useDashboardFilters();
@@ -41,14 +84,15 @@ export function ExecutiveDashboard() {
       textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
       tooltip: { trigger: "axis" },
       legend: { data: ["کل پرونده", "شکایت"], bottom: 0 },
-      grid: { left: 40, right: 16, top: 24, bottom: 48 },
+      grid: { left: 48, right: 16, top: 24, bottom: 48 },
       xAxis: {
         type: "category",
         data: data.volumeTrend.map((p) => p.label),
-        axisLabel: { color: slate },
+        axisLabel: { color: slate, hideOverlap: true },
       },
       yAxis: {
         type: "value",
+        min: 0,
         axisLabel: { color: slate },
         splitLine: { lineStyle: { color: "#e2e8f0" } },
       },
@@ -56,142 +100,81 @@ export function ExecutiveDashboard() {
         {
           name: "کل پرونده",
           type: "line",
-          smooth: true,
-          areaStyle: { color: "rgba(15,118,110,0.12)" },
+          smooth: false,
+          showSymbol: false,
           data: data.volumeTrend.map((p) => p.requests),
         },
         {
           name: "شکایت",
           type: "line",
-          smooth: true,
+          smooth: false,
+          showSymbol: false,
           data: data.volumeTrend.map((p) => p.complaints),
         },
       ],
     };
   }, [data]);
 
-  const classOption = useMemo<EChartsOption>(() => {
+  const classOption = useMemo(
+    () => (data ? horizontalBarOption(data.classDistribution, { labelWidth: 110 }) : {}),
+    [data],
+  );
+
+  const subjectOption = useMemo(
+    () => (data ? horizontalBarOption(data.categoryDistribution, { labelWidth: 140 }) : {}),
+    [data],
+  );
+
+  const orgOption = useMemo(
+    () => (data ? horizontalBarOption(data.orgUnitPerformance, { labelWidth: 150, barWidth: 14 }) : {}),
+    [data],
+  );
+
+  const channelOption = useMemo(() => {
     if (!data) return {};
-    return {
-      color: [brand, amber, "#0ea5e9", "#94a3b8"],
-      textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
-      tooltip: { trigger: "item" },
-      legend: { bottom: 0, type: "scroll" },
-      series: [
-        {
-          type: "pie",
-          radius: ["42%", "68%"],
-          center: ["50%", "45%"],
-          data: data.classDistribution.map((c) => ({ name: c.name, value: c.value })),
-          label: { formatter: "{b}" },
-        },
-      ],
-    };
+    const rows = [...data.channelDistribution].sort((a, b) => b.value - a.value);
+    const top = rows.slice(0, 8);
+    const rest = rows.slice(8);
+    const otherSum = rest.reduce((s, r) => s + r.value, 0);
+    const chartRows =
+      otherSum > 0 ? [...top, { name: "سایر کانال‌ها", value: otherSum }] : top;
+    return horizontalBarOption(chartRows, { labelWidth: 120 });
   }, [data]);
 
-  const categoryOption = useMemo<EChartsOption>(() => {
-    if (!data) return {};
+  const resolutionStackOption = useMemo<EChartsOption>(() => {
+    if (!data?.resolutionStatus.length) return {};
+    const total = data.resolutionStatus.reduce((s, r) => s + r.value, 0) || 1;
+    const finished = data.resolutionStatus.find((r) => r.name.includes("Finish") || r.name.includes("اتمام") || r.name.includes("دارای"))
+      ?? data.resolutionStatus[0];
+    const open =
+      data.resolutionStatus.find((r) => r !== finished) ?? data.resolutionStatus[1];
+    const finishedPct = Math.round((1000 * (finished?.value ?? 0)) / total) / 10;
+    const openPct = Math.round((1000 * (open?.value ?? 0)) / total) / 10;
+
     return {
-      color: [brand],
       textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
-      tooltip: { trigger: "axis" },
-      grid: { left: 140, right: 24, top: 8, bottom: 24 },
-      xAxis: { type: "value", splitLine: { lineStyle: { color: "#e2e8f0" } } },
-      yAxis: {
-        type: "category",
-        data: [...data.categoryDistribution].reverse().map((r) => r.name),
-        axisLabel: { color: slate, width: 120, overflow: "truncate" },
-      },
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      legend: { bottom: 0 },
+      grid: { left: 16, right: 16, top: 16, bottom: 40 },
+      xAxis: { type: "value", max: 100, axisLabel: { formatter: "{value}%" } },
+      yAxis: { type: "category", data: ["سهم FinishTime"] },
       series: [
         {
+          name: finished?.name ?? "اتمام‌یافته",
           type: "bar",
-          data: [...data.categoryDistribution].reverse().map((r) => r.value),
-          barWidth: 12,
+          stack: "res",
+          barWidth: 28,
+          data: [finishedPct],
+          itemStyle: { color: brand },
+          label: { show: true, formatter: () => `${formatFaPercent(finishedPct)}` },
         },
-      ],
-    };
-  }, [data]);
-
-  const orgOption = useMemo<EChartsOption>(() => {
-    if (!data) return {};
-    const rows = [...data.orgUnitPerformance].reverse();
-    return {
-      color: [brand],
-      textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
-      tooltip: { trigger: "axis" },
-      grid: { left: 150, right: 24, top: 8, bottom: 24 },
-      xAxis: { type: "value", splitLine: { lineStyle: { color: "#e2e8f0" } } },
-      yAxis: { type: "category", data: rows.map((r) => r.name), axisLabel: { color: slate } },
-      series: [{ type: "bar", data: rows.map((r) => r.value), barWidth: 14 }],
-    };
-  }, [data]);
-
-  const statusOption = useMemo<EChartsOption>(() => {
-    if (!data) return {};
-    return {
-      color: [brand, "#0ea5e9", "#f59e0b", "#ef4444", "#94a3b8"],
-      textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
-      tooltip: { trigger: "item" },
-      series: [
         {
-          type: "pie",
-          radius: "68%",
-          data: data.resolutionStatus.map((s) => ({ name: s.name, value: s.value })),
-          label: { formatter: "{b}" },
-        },
-      ],
-    };
-  }, [data]);
-
-  const channelOption = useMemo<EChartsOption>(() => {
-    if (!data) return {};
-    return {
-      color: [brand, "#0ea5e9", "#0369a1", "#f59e0b", "#94a3b8"],
-      textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
-      tooltip: { trigger: "item" },
-      series: [
-        {
-          type: "pie",
-          radius: ["40%", "65%"],
-          data: data.channelDistribution.map((s) => ({ name: s.name, value: s.value })),
-          label: { formatter: "{b}" },
-        },
-      ],
-    };
-  }, [data]);
-
-  const coverageOption = useMemo<EChartsOption>(() => {
-    if (!data) return {};
-    const v = data.answerCoverage.historicalAvailablePercent;
-    return {
-      series: [
-        {
-          type: "gauge",
-          startAngle: 200,
-          endAngle: -20,
-          min: 0,
-          max: 100,
-          pointer: { show: false },
-          progress: { show: true, width: 14, itemStyle: { color: amber } },
-          axisLine: { lineStyle: { width: 14, color: [[1, "#e2e8f0"]] } },
-          axisTick: { show: false },
-          splitLine: { show: false },
-          axisLabel: { show: false },
-          detail: {
-            valueAnimation: true,
-            formatter: () => formatFaPercent(v),
-            fontSize: 28,
-            fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif",
-            color: "#0f172a",
-            offsetCenter: [0, "10%"],
-          },
-          title: {
-            offsetCenter: [0, "55%"],
-            fontSize: 12,
-            color: slate,
-            fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif",
-          },
-          data: [{ value: v, name: "پاسخ شهروند موجود" }],
+          name: open?.name ?? "باز",
+          type: "bar",
+          stack: "res",
+          data: [openPct],
+          itemStyle: { color: "#94a3b8" },
+          label: { show: true, formatter: () => `${formatFaPercent(openPct)}` },
         },
       ],
     };
@@ -207,7 +190,13 @@ export function ExecutiveDashboard() {
 
   const selected = data.kpis.find((k) => k.id === selectedKpi);
   const primaryKpis = data.kpis.filter((k) => k.feasibility === "feasible");
-  const secondaryKpis = data.kpis.filter((k) => k.feasibility !== "feasible");
+  const secondaryKpis = data.kpis.filter(
+    (k) => k.feasibility === "needs_rules" || k.feasibility === "illustrative",
+  );
+  const unavailableKpis = data.kpis.filter((k) => k.feasibility === "unavailable");
+  const coverage = data.answerCoverage.historicalAvailablePercent;
+  const finished = data.resolutionStatus[0];
+  const open = data.resolutionStatus[1];
 
   return (
     <div className="space-y-5">
@@ -229,18 +218,39 @@ export function ExecutiveDashboard() {
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {primaryKpis.map((kpi) => (
-          <KpiCard key={kpi.id} kpi={kpi} onOpen={setSelectedKpi} />
+          <KpiCard
+            key={kpi.id}
+            kpi={kpi}
+            periodLabel={data.meta.periodLabel}
+            onOpen={setSelectedKpi}
+          />
         ))}
       </section>
 
       {secondaryKpis.length ? (
         <section>
           <div className="mb-2 text-xs font-semibold text-[var(--muted)]">
-            شاخص‌های نیازمند قاعده یا ناموجود (اولویت دوم)
+            شاخص‌های نیازمند قاعده (اولویت دوم)
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {secondaryKpis.map((kpi) => (
-              <KpiCard key={kpi.id} kpi={kpi} onOpen={setSelectedKpi} />
+              <KpiCard
+                key={kpi.id}
+                kpi={kpi}
+                periodLabel={data.meta.periodLabel}
+                onOpen={setSelectedKpi}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {unavailableKpis.length ? (
+        <section className="space-y-2">
+          <div className="text-xs font-semibold text-[var(--muted)]">ناموجود در دیده‌بان</div>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            {unavailableKpis.map((kpi) => (
+              <KpiCard key={kpi.id} kpi={kpi} compact onOpen={setSelectedKpi} />
             ))}
           </div>
         </section>
@@ -250,7 +260,7 @@ export function ExecutiveDashboard() {
         <div className="xl:col-span-2">
           <ChartCard
             title="روند حجم پرونده و شکایت"
-            subtitle={data.volumeTrend.length ? "ماهانه · CookieTime" : "سری زمانی در دسترس نیست"}
+            subtitle={data.volumeTrend.length ? "ماهانه · خط مستقیم · بدون پر کردن سطح" : "سری زمانی در دسترس نیست"}
           >
             {data.volumeTrend.length ? (
               <EChart option={volumeOption} height={300} />
@@ -261,7 +271,7 @@ export function ExecutiveDashboard() {
             )}
           </ChartCard>
         </div>
-        <ChartCard title="توزیع SubjectClass" subtitle="شکایت / راهنمایی / گزارش / پیشنهاد">
+        <ChartCard title="توزیع SubjectClass" subtitle="میله افقی مرتب‌شده · مقایسه طبقه">
           <EChart option={classOption} height={300} />
         </ChartCard>
       </section>
@@ -311,52 +321,65 @@ export function ExecutiveDashboard() {
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <ChartCard title="موضوعات پرتکرار" subtitle="رتبه‌بندی Subject — رشد نسبی محاسبه نشده">
-          <ul className="divide-y divide-slate-100">
-            {data.emergingTopics.map((t) => (
-              <li key={t.rank} className="flex items-center justify-between gap-3 py-3">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-50 text-xs font-bold text-teal-800">
-                    {formatFaNumber(t.rank)}
-                  </span>
-                  <div>
-                    <div className="text-sm font-medium text-slate-900">{t.topic}</div>
-                    <div className="mt-1 text-xs text-[var(--muted)]">
-                      {formatFaNumber(t.count)} مورد
-                    </div>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </ChartCard>
-        <ChartCard title="گروه‌های موضوعی پرتکرار" subtitle="از Subjectهای پرتکرار">
-          <EChart option={categoryOption} height={280} />
-        </ChartCard>
-        <ChartCard title="پوشش پاسخ تاریخی" subtitle="Availability · Validity ناموجود">
-          <EChart option={coverageOption} height={200} />
-          <p className="mt-2 text-[11px] leading-5 text-amber-950">
-            {formatFaPercent(data.answerCoverage.historicalAvailablePercent)} پاسخ شهروند ·{" "}
-            {data.answerCoverage.caveat}
-          </p>
+        <div className="xl:col-span-2">
+          <ChartCard
+            title="موضوعات پرتکرار (Subject)"
+            subtitle="یک نمودار میله‌ای — بدون لیست تکراری و بدون نشان رشد جعلی"
+          >
+            <EChart option={subjectOption} height={300} />
+          </ChartCard>
+        </div>
+        <ChartCard title="پوشش پاسخ شهروند" subtitle="Availability · یک عدد · Validity ناموجود">
+          <div className="flex h-[200px] flex-col justify-center gap-4 px-1">
+            <div>
+              <div className="text-xs text-[var(--muted)]">پاسخ شهروند موجود</div>
+              <div className="mt-1 text-4xl font-bold tracking-tight text-slate-900">
+                {formatFaPercent(coverage)}
+              </div>
+              <div className="mt-1 text-[11px] text-slate-400">{data.meta.periodLabel}</div>
+            </div>
+            <div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-amber-500"
+                  style={{ width: `${Math.min(100, Math.max(0, coverage))}%` }}
+                />
+              </div>
+              <p className="mt-3 text-[11px] leading-5 text-amber-950">{data.answerCoverage.caveat}</p>
+            </div>
+          </div>
         </ChartCard>
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <ChartCard title="کانال ثبت" subtitle="CookieChannel">
-          <EChart option={channelOption} height={260} />
+        <ChartCard title="کانال ثبت" subtitle="Top کانال‌ها · میله افقی (نه دونات)">
+          <EChart option={channelOption} height={280} />
         </ChartCard>
-        <ChartCard title="حجم ادارات / واحدها" subtitle="بر اساس Department — نه امتیاز عملکرد">
-          <EChart option={orgOption} height={260} />
+        <ChartCard title="حجم ادارات / واحدها" subtitle="Department volume — نه امتیاز عملکرد">
+          <EChart option={orgOption} height={280} />
         </ChartCard>
-        {data.resolutionStatus.length ? (
-          <ChartCard title="اتمام / باز (FinishTime)" subtitle="نیازمند قاعده بسته‌شدن کسب‌وکار">
-            <EChart option={statusOption} height={260} />
+        {data.resolutionStatus.length >= 2 ? (
+          <ChartCard title="اتمام / باز (FinishTime)" subtitle="نیازمند قاعده · میله ۱۰۰٪ به‌جای پای">
+            <div className="mb-3 grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-teal-50 p-3">
+                <div className="text-[11px] text-teal-800">{finished?.name ?? "اتمام"}</div>
+                <div className="mt-1 text-xl font-bold text-teal-950">
+                  {formatFaNumber(finished?.value ?? 0)}
+                </div>
+              </div>
+              <div className="rounded-lg bg-slate-100 p-3">
+                <div className="text-[11px] text-slate-600">{open?.name ?? "باز"}</div>
+                <div className="mt-1 text-xl font-bold text-slate-800">
+                  {formatFaNumber(open?.value ?? 0)}
+                </div>
+              </div>
+            </div>
+            <EChart option={resolutionStackOption} height={140} />
           </ChartCard>
         ) : (
           <ChartCard title="وضعیت رسیدگی" subtitle="در این منبع متصل نیست">
-            <div className="flex h-[260px] items-center justify-center text-sm text-[var(--muted)]">
-              نمودار وضعیت مخفی شد چون داده ندارد.
+            <div className="flex h-[280px] items-center justify-center text-sm text-[var(--muted)]">
+              دادهٔ اتمام/باز برای نمایش نیست.
             </div>
           </ChartCard>
         )}
