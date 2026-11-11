@@ -114,6 +114,27 @@ Domain note: source system is **Behzisti Didban** (`Cookie` = case). Brief “So
 - **Definition:** Share of cases with non-empty `CookieFlow.CookieFlowReplyCitizen`
 - **Observed:** ~12,220 distinct Cookies ≈ **~6.3%** — **not ~70%**
 - **Status:** `Feasible now` — must be labeled as **availability of citizen reply field**, not legal validity
+- **Decision note:** Blended D1 misleads; prefer **D1c / D1g / D1x** on the executive (see `docs/16-decision-kpi-priority.md`)
+
+### D1c. Complaint Answer Availability
+- **Definition:** D1 restricted to `SubjectClassId = 1` (شکایت)
+- **Status:** `Feasible now` — primary ops KPI
+
+### D1g. Guidance Answer Availability
+- **Definition:** D1 restricted to `SubjectClassId = 3` (راهنمایی و ارشاد)
+- **Status:** `Feasible now` — often ≈0%; policy choice (capture vs FAQ)
+
+### D1x. Complaint Availability excluding voice noise
+- **Definition:** D1c excluding `SubjectId = 357` (پیامهای صوتی غیر قابل پیگیری)
+- **Status:** `Feasible now` — “true” complaint reply rate
+
+### N1. Voice-noise share of complaints
+- **Definition:** Subject 357 complaints / all complaints
+- **Status:** `Feasible now`
+
+### N2. Auto-register complaint dead-end
+- **Definition:** Count (and coverage %) of complaints on department «ثبت خودکار»
+- **Status:** `Feasible now`
 
 ### D2. Operator-Note Coverage
 - **Definition:** Cases with operator narrative in flow (`CookieFlowText`/`Desc`)

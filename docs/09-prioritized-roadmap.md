@@ -86,6 +86,8 @@ Deliverables:
 
 **Decision loop (beyond NLP meeting stack):** coverage-by-department/subject on answers API + diagnosis UI; browser-local action register — see `docs/15-decision-action-loop.md`.
 
+**Decision KPIs on executive (applied):** D1c/D1g/D1x + N1/N2 + server `decisionBrief` story + freshness/`fresh=true` — see `docs/16-decision-kpi-priority.md`.
+
 ---
 
 ### P4 — Historical analytics & offline NLP (not automation) — **STARTED**
