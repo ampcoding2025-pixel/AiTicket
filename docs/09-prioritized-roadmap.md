@@ -67,15 +67,17 @@ Deliverables:
 
 ---
 
-### P3 — Read-only integration pipeline (Backend start)
+### P3 — Read-only integration pipeline (Backend start) — **IN PROGRESS**
 **Why:** Replace Mock with truth for Feasible KPIs only.
 
-- ASP.NET modular monolith skeleton (Analytics + KPI modules)
-- Read-only SQL (Dapper) views/queries — **no writes**
-- Cache aggregates; never dump raw PII to exec charts
-- Feature flags: Feasible KPIs live; Unavailable KPIs hidden/disabled
+- [x] ASP.NET modular monolith skeleton (`api/AiTicket.Api`)
+- [x] Read-only SQL (Dapper) for executive / requests / KPI values
+- [x] Health + admin sources probe
+- [ ] Cache aggregates
+- [ ] Frontend `DATA_PROVIDER=api` swap
+- [ ] Category tree + answer cases endpoints
 
-**First live KPI set:** A1–A7, B2 (with rules), C1–C2, D1 (citizen reply %), geo/channel.
+**First live KPI set (API):** A1, A2, A3, B1/B2/B3 (needs_rules), D1, C3 unavailable.
 
 **Exit:** Executive Dashboard can run on `DATA_PROVIDER=api` against Didban aggregates.
 

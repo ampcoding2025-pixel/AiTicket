@@ -6,6 +6,12 @@ web/node_modules/
 web/.next/
 web/out/
 
+# .NET
+api/**/bin/
+api/**/obj/
+*.user
+*.suo
+
 # Env / secrets — never commit credentials
 .env
 .env.*
@@ -13,6 +19,8 @@ web/out/
 web/.env
 web/.env.*
 !web/.env.example
+api/**/appsettings.Development.json
+!api/**/appsettings.Development.example.json
 
 # OS / IDE
 .DS_Store

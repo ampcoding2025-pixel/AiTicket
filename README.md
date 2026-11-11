@@ -11,8 +11,9 @@
 ## Repository Layout
 
 ```
-docs/     Product, IA, KPI mapping, Didban notes, roadmap, AI toolkit
-web/      Next.js frontend (Phase 2)
+docs/     Product, IA, KPI mapping, Didban notes, roadmap, AI toolkit, API contracts
+web/      Next.js frontend (Phase 2 Mock UI)
+api/      ASP.NET Core read-only analytics API (Phase 3)
 ```
 
 ## Quick Start (Frontend)
@@ -46,7 +47,8 @@ Open [http://localhost:3000](http://localhost:3000).
 | Phase 2 AI Performance shell (Mock) | Done (`/ai/performance`) |
 | Phase 2 Admin shells (Mock) | Done (`/admin/*`) |
 | **Phase 2 Presentation Layer** | **Complete (Mock, Behzisti-shaped)** |
-| Phase 3 API contracts (docs) | Started — `docs/11`–`13` + `docs/openapi/analytics-v1.yaml` |
+| Phase 3 API contracts (docs) | Done draft — `docs/11`–`13` + OpenAPI |
+| Phase 3 Backend API skeleton | Started — `api/AiTicket.Api` (executive/requests/kpis live queries) |
 | Didban schema discovery | **Done (read-only)** — see `docs/08` |
 | KPI feasibility mapping | **Done (first pass)** — see `docs/04` |
 | Prioritized roadmap | `docs/09-prioritized-roadmap.md` |
