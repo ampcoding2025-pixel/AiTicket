@@ -20,7 +20,7 @@ const titles: Record<string, { title: string; subtitle: string }> = {
     title: "کاوش موضوع و خوشه",
     subtitle: "خوشه‌های NLP نمایشی، کلیدواژه، تحول زمانی و گراف روابط معنادار",
   },
-  "/knowledge/coverage": {
+  "/knowledge/answers": {
     title: "هوش پاسخ تاریخی",
     subtitle: "پوشش پاسخ موجود در برابر اعتبار قانونی — بدون ادعای ۷۰٪ تأییدنشده",
   },

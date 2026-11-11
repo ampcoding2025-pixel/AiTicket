@@ -53,7 +53,7 @@ export const navigation: NavGroup[] = [
     id: "knowledge",
     label: "هوش دانش",
     items: [
-      { id: "answer-coverage", label: "پوشش پاسخ تاریخی", href: "/knowledge/coverage", maturity: "mock" },
+      { id: "answer-coverage", label: "پوشش پاسخ تاریخی", href: "/knowledge/answers", maturity: "mock" },
       { id: "similar", label: "کاوش موارد مشابه", href: "/knowledge/similar", maturity: "planned" },
       { id: "kb", label: "پایگاه دانش", href: "/knowledge/base", maturity: "planned" },
       { id: "regs", label: "مدیریت بخشنامه‌ها", href: "/knowledge/regulations", maturity: "planned" },

@@ -40,7 +40,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | Phase 2 Request Analytics (Mock) | Done (`/analytics/requests`) |
 | Phase 2 Category Explorer (Mock) | Done (`/analytics/categories`) |
 | Phase 2 Topic & Cluster Explorer (Mock) | Done (`/analytics/topics`) |
-| Phase 2 Historical Answer Intelligence (Mock) | Done (`/knowledge/coverage`) |
+| Phase 2 Historical Answer Intelligence (Mock) | Done (`/knowledge/answers`) |
 | Phase 2 KPI Monitoring (Mock) | Done (`/performance/kpi`) |
 | Phase 2 Reports & Export (Mock) | Done (`/reports/standard`, `/reports/export`) |
 | Phase 2 AI Performance shell (Mock) | Done (`/ai/performance`) |
