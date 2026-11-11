@@ -4,9 +4,12 @@ import type {
   AnswerValidityStatus,
   CategoryExplorerData,
   CategoryNode,
+  DictionaryFeasibility,
   ExecutiveDashboardData,
   ExecutiveKpi,
+  KpiDictionaryItem,
   KpiFeasibility,
+  KpiMonitoringData,
   KpiTone,
   NamedValue,
   RequestAnalyticsData,
@@ -322,7 +325,85 @@ export const apiAnalyticsProvider: AnalyticsDataProvider = {
   },
 
   getTopicExplorer: () => mockAnalyticsProvider.getTopicExplorer(),
-  getKpiMonitoring: () => mockAnalyticsProvider.getKpiMonitoring(),
+
+  async getKpiMonitoring(): Promise<KpiMonitoringData> {
+    const catalog = await mockAnalyticsProvider.getKpiMonitoring();
+    const live = await fetchJson<{
+      meta: ApiMeta;
+      ruleSetVersion: string;
+      values: {
+        code: string;
+        feasibility: string;
+        value: number | null;
+        unit: string;
+        computedAt: string;
+      }[];
+    }>("/api/v1/kpis/values");
+
+    const byCode = new Map(
+      live.values.map((v) => [v.code.trim().toUpperCase(), v] as const),
+    );
+
+    const items: KpiDictionaryItem[] = catalog.items.map((item) => {
+      const hit = byCode.get(item.code.toUpperCase());
+      if (!hit) {
+        return {
+          ...item,
+          latestValue: null,
+          trend: [],
+        };
+      }
+
+      const unit =
+        hit.unit === "percent" || hit.unit === "days" || hit.unit === "ratio"
+          ? hit.unit
+          : item.unit;
+
+      const feasibility = (
+        ["feasible", "needs_rules", "weak_proxy", "unavailable", "planned_m2"].includes(
+          hit.feasibility,
+        )
+          ? hit.feasibility
+          : item.feasibility
+      ) as DictionaryFeasibility;
+
+      return {
+        ...item,
+        feasibility,
+        latestValue: hit.value,
+        unit,
+        trend:
+          hit.value == null
+            ? []
+            : [{ label: live.meta.periodLabel || "جاری", value: Number(hit.value) }],
+      };
+    });
+
+    const counts: Record<DictionaryFeasibility, number> = {
+      feasible: 0,
+      needs_rules: 0,
+      weak_proxy: 0,
+      unavailable: 0,
+      planned_m2: 0,
+    };
+    for (const item of items) {
+      counts[item.feasibility] += 1;
+    }
+
+    const liveCodes = live.values.map((v) => v.code).join("، ");
+
+    return {
+      meta: {
+        source: "didban",
+        label: `پایش شاخص‌ها · داده زنده (${live.ruleSetVersion})`,
+        periodLabel: live.meta.periodLabel,
+        note: `مقادیر زنده برای ${liveCodes}. سایر کدهای کاتالوگ فقط تعریف/امکان‌سنجی دارند و عدد Mock نمایش داده نمی‌شود.`,
+      },
+      counts,
+      items,
+    };
+  },
+
   getReportsCenter: () => mockAnalyticsProvider.getReportsCenter(),
   getAiPerformance: () => mockAnalyticsProvider.getAiPerformance(),
   getAdminCenter: () => mockAnalyticsProvider.getAdminCenter(),

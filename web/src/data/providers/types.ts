@@ -231,7 +231,7 @@ export type KpiDictionaryItem = {
 
 export type KpiMonitoringData = {
   meta: {
-    source: "mock";
+    source: DataSourceKind;
     label: string;
     periodLabel: string;
     note: string;

@@ -22,7 +22,7 @@ export const navigation: NavGroup[] = [
         id: "executive",
         label: "داشبورد مدیریتی",
         href: "/",
-        maturity: "mock",
+        maturity: "active",
       },
     ],
   },
@@ -30,9 +30,9 @@ export const navigation: NavGroup[] = [
     id: "analytics",
     label: "تحلیل‌ها",
     items: [
-      { id: "request-analytics", label: "تحلیل درخواست‌ها", href: "/analytics/requests", maturity: "mock" },
+      { id: "request-analytics", label: "تحلیل درخواست‌ها", href: "/analytics/requests", maturity: "active" },
       { id: "complaint-analytics", label: "تحلیل شکایات", href: "/analytics/complaints", maturity: "planned" },
-      { id: "category-analysis", label: "تحلیل دسته‌بندی", href: "/analytics/categories", maturity: "mock" },
+      { id: "category-analysis", label: "تحلیل دسته‌بندی", href: "/analytics/categories", maturity: "active" },
       { id: "topics", label: "کاوش موضوع و خوشه", href: "/analytics/topics", maturity: "mock" },
       { id: "sentiment", label: "تحلیل احساسات", href: "/analytics/sentiment", maturity: "planned" },
       { id: "trends", label: "تحلیل روند", href: "/analytics/trends", maturity: "planned" },
@@ -43,7 +43,7 @@ export const navigation: NavGroup[] = [
     id: "performance",
     label: "عملکرد",
     items: [
-      { id: "kpi", label: "پایش شاخص‌ها", href: "/performance/kpi", maturity: "mock" },
+      { id: "kpi", label: "پایش شاخص‌ها", href: "/performance/kpi", maturity: "active" },
       { id: "sla", label: "SLA و زمان پاسخ", href: "/performance/sla", maturity: "planned" },
       { id: "org-perf", label: "عملکرد واحد سازمانی", href: "/performance/units", maturity: "planned" },
       { id: "workload", label: "توزیع بار کاری", href: "/performance/workload", maturity: "planned" },
@@ -53,7 +53,7 @@ export const navigation: NavGroup[] = [
     id: "knowledge",
     label: "هوش دانش",
     items: [
-      { id: "answer-coverage", label: "پوشش پاسخ تاریخی", href: "/knowledge/answers", maturity: "mock" },
+      { id: "answer-coverage", label: "پوشش پاسخ تاریخی", href: "/knowledge/answers", maturity: "active" },
       { id: "similar", label: "کاوش موارد مشابه", href: "/knowledge/similar", maturity: "planned" },
       { id: "kb", label: "پایگاه دانش", href: "/knowledge/base", maturity: "planned" },
       { id: "regs", label: "مدیریت بخشنامه‌ها", href: "/knowledge/regulations", maturity: "planned" },
