@@ -208,4 +208,15 @@ The product still fails the chapter’s pie case study on **drill pages**: `/ana
 
 ## Remediations
 
-_Status: audit only — implementation not yet applied._
+_Status: applied 2026-11-11 — Chapter 9 case-study visual fixes._
+
+| # | Change | Files | Criteria |
+|---|--------|-------|----------|
+| 1 | Replace SubjectClass donut with sorted horizontal bars | `RequestAnalytics.tsx` | C9.16–C9.18 |
+| 2 | Replace coverage-breakdown donut with sorted bars; drop duplicate tiles | `HistoricalAnswerIntelligence.tsx` | C9.16, C9.17 |
+| 3 | Replace feasibility donut with sorted bars; slate feasibility chips | `KpiMonitoring.tsx` | C9.03, C9.16 |
+| 4 | Shared `sortedHorizontalBarOption` helper; region/group bars aligned | `sortedHorizontalBar.ts`, `RequestAnalytics.tsx` | C9.09, C9.11 |
+| 5 | Sort subtitles «مرتب بر اساس حجم/شمارش» | drill ChartCards | C9.12 |
+| 6 | Drill lines: `smooth: false`, no area fill | answers + KPI trends | C9.20 |
+| 7 | ECharts respects `prefers-reduced-motion` | `EChart.tsx` | C9.07 |
+| 8 | Soften executive header subtitle (investigation, not decision) | `Header.tsx` | Ch.8 residual |

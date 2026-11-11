@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { EChart } from "@/components/charts/EChart";
+import { sortedHorizontalBarOption } from "@/components/charts/sortedHorizontalBar";
 import { getAnalyticsProvider } from "@/data/providers";
 import { useDashboardFilters } from "@/data/DashboardFilterContext";
 import type {
@@ -35,12 +36,13 @@ const feasibilityLabel: Record<DictionaryFeasibility, string> = {
   planned_m2: "برنامه M2",
 };
 
+/** Feasible = neutral slate (not “good”); amber = needs rules — Ch.4/9 color meaning */
 const feasibilityStyle: Record<DictionaryFeasibility, string> = {
-  feasible: "bg-emerald-50 text-emerald-800 border-emerald-200",
+  feasible: "bg-slate-100 text-slate-700 border-slate-200",
   needs_rules: "bg-amber-50 text-amber-900 border-amber-200",
-  weak_proxy: "bg-orange-50 text-orange-900 border-orange-200",
-  unavailable: "bg-slate-100 text-slate-600 border-slate-200",
-  planned_m2: "bg-violet-50 text-violet-900 border-violet-200",
+  weak_proxy: "bg-slate-50 text-slate-600 border-slate-200",
+  unavailable: "bg-slate-50 text-slate-500 border-slate-200",
+  planned_m2: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
 function formatKpiValue(item: KpiDictionaryItem) {
@@ -113,8 +115,9 @@ export function KpiMonitoring() {
       series: [
         {
           type: "line",
-          smooth: true,
-          areaStyle: { color: "rgba(15,118,110,0.12)" },
+          smooth: false,
+          showSymbol: false,
+          lineStyle: { width: 3, color: brand },
           data: selected.trend.map((p) => p.value),
         },
       ],
@@ -124,21 +127,10 @@ export function KpiMonitoring() {
   const feasibilityDistOption = useMemo<EChartsOption>(() => {
     if (!data) return {};
     const entries = Object.entries(data.counts) as [DictionaryFeasibility, number][];
-    return {
-      color: ["#059669", "#d97706", "#ea580c", "#94a3b8", "#7c3aed"],
-      textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
-      tooltip: { trigger: "item" },
-      legend: { bottom: 0 },
-      series: [
-        {
-          type: "pie",
-          radius: ["40%", "68%"],
-          center: ["50%", "45%"],
-          data: entries.map(([k, v]) => ({ name: feasibilityLabel[k], value: v })),
-          label: { formatter: "{b}" },
-        },
-      ],
-    };
+    return sortedHorizontalBarOption(
+      entries.map(([k, v]) => ({ name: feasibilityLabel[k], value: v })),
+      { labelWidth: 120, highlightMax: true },
+    );
   }, [data]);
 
   if (!data || !selected) {
@@ -334,7 +326,10 @@ export function KpiMonitoring() {
                 </div>
               )}
             </ChartCard>
-            <ChartCard title="توزیع وضعیت امکان‌سنجی کاتالوگ" subtitle="بر اساس دیکشنری KPI">
+            <ChartCard
+              title="توزیع وضعیت امکان‌سنجی کاتالوگ"
+              subtitle="مرتب بر اساس شمارش — میلهٔ نارنجی = بیشترین"
+            >
               <EChart option={feasibilityDistOption} height={260} />
             </ChartCard>
           </div>

@@ -5,6 +5,7 @@ import type { EChartsOption } from "echarts";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { EChart } from "@/components/charts/EChart";
+import { sortedHorizontalBarOption } from "@/components/charts/sortedHorizontalBar";
 import { getAnalyticsProvider } from "@/data/providers";
 import { useDashboardFilters } from "@/data/DashboardFilterContext";
 import type { RequestAnalyticsData } from "@/data/providers/types";
@@ -29,41 +30,27 @@ export function RequestAnalytics() {
     };
   }, [filters.period, filters.subjectClassId]);
 
-  const classOption = useMemo<EChartsOption>(() => {
-    if (!data) return {};
-    return {
-      color: [brand, "#d97706", "#0ea5e9", "#94a3b8"],
-      textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
-      tooltip: { trigger: "item" },
-      legend: { bottom: 0 },
-      series: [
-        {
-          type: "pie",
-          radius: ["40%", "68%"],
-          data: data.byClass.map((c) => ({ name: c.name, value: c.value })),
-          label: { formatter: "{b}" },
-        },
-      ],
-    };
-  }, [data]);
+  const classOption = useMemo<EChartsOption>(
+    () =>
+      data
+        ? sortedHorizontalBarOption(
+            data.byClass.map((c) => ({ name: c.name, value: c.value })),
+            { labelWidth: 110 },
+          )
+        : {},
+    [data],
+  );
 
-  const groupOption = useMemo<EChartsOption>(() => {
-    if (!data) return {};
-    const rows = [...data.bySubjectGroup].reverse();
-    return {
-      color: [brand],
-      textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
-      tooltip: { trigger: "axis" },
-      grid: { left: 160, right: 20, top: 8, bottom: 24 },
-      xAxis: { type: "value", splitLine: { lineStyle: { color: "#e2e8f0" } } },
-      yAxis: {
-        type: "category",
-        data: rows.map((r) => r.name),
-        axisLabel: { color: slate, width: 140, overflow: "truncate" },
-      },
-      series: [{ type: "bar", data: rows.map((r) => r.value), barWidth: 12 }],
-    };
-  }, [data]);
+  const groupOption = useMemo<EChartsOption>(
+    () =>
+      data
+        ? sortedHorizontalBarOption(
+            data.bySubjectGroup.map((r) => ({ name: r.name, value: r.value })),
+            { labelWidth: 140 },
+          )
+        : {},
+    [data],
+  );
 
   const compareOption = useMemo<EChartsOption>(() => {
     if (!data) return {};
@@ -98,19 +85,16 @@ export function RequestAnalytics() {
     };
   }, [data]);
 
-  const regionOption = useMemo<EChartsOption>(() => {
-    if (!data) return {};
-    const rows = [...data.byRegion].reverse();
-    return {
-      color: ["#0ea5e9"],
-      textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
-      tooltip: { trigger: "axis" },
-      grid: { left: 110, right: 20, top: 8, bottom: 24 },
-      xAxis: { type: "value", splitLine: { lineStyle: { color: "#e2e8f0" } } },
-      yAxis: { type: "category", data: rows.map((r) => r.name), axisLabel: { color: slate } },
-      series: [{ type: "bar", data: rows.map((r) => r.value), barWidth: 12 }],
-    };
-  }, [data]);
+  const regionOption = useMemo<EChartsOption>(
+    () =>
+      data
+        ? sortedHorizontalBarOption(
+            data.byRegion.map((r) => ({ name: r.name, value: r.value })),
+            { labelWidth: 110 },
+          )
+        : {},
+    [data],
+  );
 
   if (!data) {
     return (
@@ -135,7 +119,10 @@ export function RequestAnalytics() {
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <ChartCard title="توزیع طبقه درخواست" subtitle="SubjectClass">
+        <ChartCard
+          title="توزیع طبقه درخواست"
+          subtitle="مرتب بر اساس حجم فعلی فیلتر — میلهٔ نارنجی = بیشترین"
+        >
           <EChart option={classOption} height={300} />
         </ChartCard>
         <div className="xl:col-span-2">
@@ -146,10 +133,10 @@ export function RequestAnalytics() {
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <ChartCard title="گروه‌های موضوعی" subtitle="SubjectGroup">
+        <ChartCard title="گروه‌های موضوعی" subtitle="مرتب بر اساس حجم فعلی فیلتر">
           <EChart option={groupOption} height={340} />
         </ChartCard>
-        <ChartCard title="توزیع استانی" subtitle="Inform.RegionId">
+        <ChartCard title="توزیع استانی" subtitle="مرتب بر اساس حجم فعلی فیلتر">
           <EChart option={regionOption} height={340} />
         </ChartCard>
       </section>

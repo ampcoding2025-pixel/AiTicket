@@ -17,7 +17,7 @@ const PERIOD_CHIP_LABELS: Record<PeriodKey, string> = {
 const titles: Record<string, { title: string; subtitle: string }> = {
   "/": {
     title: "داشبورد مدیریتی",
-    subtitle: "نمای مدیریتی حجم پرونده و پوشش دانش — برای تصمیم‌گیری سطح سازمان",
+    subtitle: "نمای مدیریتی حجم پرونده و پوشش دانش — پایش و تحقیق Outside-In",
   },
   "/analytics/requests": {
     title: "تحلیل درخواست‌ها و شکایات",

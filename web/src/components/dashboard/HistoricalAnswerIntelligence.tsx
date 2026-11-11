@@ -5,6 +5,7 @@ import type { EChartsOption } from "echarts";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { EChart } from "@/components/charts/EChart";
+import { sortedHorizontalBarOption } from "@/components/charts/sortedHorizontalBar";
 import { getAnalyticsProvider } from "@/data/providers";
 import { useDashboardFilters } from "@/data/DashboardFilterContext";
 import type {
@@ -15,7 +16,6 @@ import type {
 import { cn, formatFaNumber, formatFaPercent } from "@/lib/utils";
 import { BookOpenCheck, ShieldAlert } from "lucide-react";
 
-const brand = "#0f766e";
 const slate = "#64748b";
 const amber = "#d97706";
 
@@ -68,25 +68,14 @@ export function HistoricalAnswerIntelligence() {
   const breakdownOption = useMemo<EChartsOption>(() => {
     if (!data) return {};
     const b = data.coverageBreakdown;
-    return {
-      color: [amber, "#0ea5e9", "#94a3b8"],
-      textStyle: { fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif" },
-      tooltip: { trigger: "item" },
-      legend: { bottom: 0 },
-      series: [
-        {
-          type: "pie",
-          radius: ["42%", "68%"],
-          center: ["50%", "45%"],
-          data: [
-            { name: "پاسخ شهروند (ReplyCitizen)", value: b.withCitizenReply },
-            { name: "فقط یادداشت اپراتور", value: b.withOperatorNoteOnly },
-            { name: "بدون متن پاسخ", value: b.withNoTextAnswer },
-          ],
-          label: { formatter: "{b}" },
-        },
+    return sortedHorizontalBarOption(
+      [
+        { name: "پاسخ شهروند", value: b.withCitizenReply },
+        { name: "فقط یادداشت اپراتور", value: b.withOperatorNoteOnly },
+        { name: "بدون متن پاسخ", value: b.withNoTextAnswer },
       ],
-    };
+      { labelWidth: 140, highlightMax: true },
+    );
   }, [data]);
 
   const trendOption = useMemo<EChartsOption>(() => {
@@ -110,8 +99,9 @@ export function HistoricalAnswerIntelligence() {
       series: [
         {
           type: "line",
-          smooth: true,
-          areaStyle: { color: "rgba(217,119,6,0.12)" },
+          smooth: false,
+          showSymbol: false,
+          lineStyle: { width: 3, color: amber },
           data: data.coverageTrend.map((p) => p.availablePercent),
           markLine: {
             symbol: "none",
@@ -173,8 +163,6 @@ export function HistoricalAnswerIntelligence() {
     );
   }
 
-  const b = data.coverageBreakdown;
-
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
@@ -193,24 +181,13 @@ export function HistoricalAnswerIntelligence() {
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <ChartCard title="ترکیب پوشش متنی" subtitle="ReplyCitizen در برابر یادداشت اپراتور">
+        <ChartCard
+          title="ترکیب پوشش متنی"
+          subtitle="مرتب بر اساس شمارش — میلهٔ نارنجی = بیشترین"
+        >
           <EChart option={breakdownOption} height={280} />
-          <div className="mt-2 grid grid-cols-3 gap-2 text-center text-[11px]">
-            <div className="rounded-lg bg-amber-50 p-2">
-              <div className="text-[var(--muted)]">پاسخ شهروند</div>
-              <div className="mt-1 font-bold">{formatFaNumber(b.withCitizenReply)}</div>
-            </div>
-            <div className="rounded-lg bg-sky-50 p-2">
-              <div className="text-[var(--muted)]">فقط اپراتور</div>
-              <div className="mt-1 font-bold">{formatFaNumber(b.withOperatorNoteOnly)}</div>
-            </div>
-            <div className="rounded-lg bg-slate-100 p-2">
-              <div className="text-[var(--muted)]">بدون متن</div>
-              <div className="mt-1 font-bold">{formatFaNumber(b.withNoTextAnswer)}</div>
-            </div>
-          </div>
         </ChartCard>
-        <ChartCard title="روند پوشش پاسخ موجود" subtitle="در برابر خط ادعای ۷۰٪ تأییدنشده">
+        <ChartCard title="روند پوشش پاسخ موجود" subtitle="خط مستقیم · در برابر ادعای ۷۰٪ تأییدنشده">
           <EChart option={trendOption} height={300} />
         </ChartCard>
         <ChartCard title="Availability در برابر Validity" subtitle="شاخص‌های ناموجود خاموش می‌مانند">
