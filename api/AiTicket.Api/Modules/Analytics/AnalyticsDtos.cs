@@ -11,7 +11,8 @@ public sealed record ExecutiveDashboardResponse(
     IReadOnlyList<NamedValueDto> ChannelDistribution,
     IReadOnlyList<NamedValueDto> TopSubjects,
     IReadOnlyList<NamedValueDto> TopDepartments,
-    AnswerCoverageDto AnswerCoverage);
+    AnswerCoverageDto AnswerCoverage,
+    DecisionBriefDto DecisionBrief);
 
 public sealed record VolumeTrendPointDto(string Label, long Requests, long Complaints);
 
@@ -20,7 +21,26 @@ public sealed record AnswerCoverageDto(
     double? CurrentlyValidPercent,
     double? NeedsReviewPercent,
     string ValidityStatus,
-    string Caveat);
+    string Caveat,
+    double? ComplaintAvailablePercent = null,
+    double? GuidanceAvailablePercent = null,
+    double? ComplaintExVoiceAvailablePercent = null,
+    long? VoiceNoiseComplaintCount = null,
+    double? VoiceNoiseShareOfComplaintsPercent = null,
+    long? AutoRegisterComplaintCount = null,
+    double? AutoRegisterComplaintCoveragePercent = null);
+
+/** Server-built story for decision makers — derived only from feasible metrics. */
+public sealed record DecisionBriefDto(
+    string BigIdea,
+    IReadOnlyList<DecisionInsightDto> Insights);
+
+public sealed record DecisionInsightDto(
+    string Id,
+    string Title,
+    string Body,
+    string Severity,
+    string Priority);
 
 public sealed record RequestAnalyticsResponse(
     MetaDto Meta,

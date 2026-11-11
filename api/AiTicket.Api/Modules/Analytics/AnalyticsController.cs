@@ -21,7 +21,8 @@ public sealed class AnalyticsController(
         [FromQuery] int? channelId,
         [FromQuery] int? regionId,
         [FromQuery] int? zoneId,
-        CancellationToken ct)
+        [FromQuery] bool fresh = false,
+        CancellationToken ct = default)
     {
         if (!connectionFactory.IsConfigured)
         {
@@ -34,7 +35,7 @@ public sealed class AnalyticsController(
         }
 
         var filter = new PeriodFilter(from, to, departmentId, subjectClassId, channelId, regionId, zoneId);
-        var result = await analytics.GetExecutiveAsync(filter, ct);
+        var result = await analytics.GetExecutiveAsync(filter, ct, bypassCache: fresh);
         return Ok(result);
     }
 

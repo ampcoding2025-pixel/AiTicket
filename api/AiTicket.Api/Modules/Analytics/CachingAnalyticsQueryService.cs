@@ -9,8 +9,19 @@ public sealed class CachingAnalyticsQueryService(
 {
     private static readonly TimeSpan Ttl = TimeSpan.FromMinutes(3);
 
-    public Task<ExecutiveDashboardResponse> GetExecutiveAsync(PeriodFilter filter, CancellationToken ct) =>
-        GetOrCreateAsync($"exec:{Key(filter)}", () => inner.GetExecutiveAsync(filter, ct));
+    public Task<ExecutiveDashboardResponse> GetExecutiveAsync(
+        PeriodFilter filter,
+        CancellationToken ct,
+        bool bypassCache = false)
+    {
+        if (bypassCache)
+        {
+            cache.Remove($"exec:{Key(filter)}");
+            return inner.GetExecutiveAsync(filter, ct);
+        }
+
+        return GetOrCreateAsync($"exec:{Key(filter)}", () => inner.GetExecutiveAsync(filter, ct));
+    }
 
     public Task<RequestAnalyticsResponse> GetRequestsAsync(PeriodFilter filter, CancellationToken ct) =>
         GetOrCreateAsync($"req:{Key(filter)}", () => inner.GetRequestsAsync(filter, ct));
